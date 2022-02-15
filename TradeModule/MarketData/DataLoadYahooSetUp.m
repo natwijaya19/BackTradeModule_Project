@@ -1,22 +1,30 @@
 classdef DataLoadYahooSetUp
-    %UNTITLED8 Summary of this class goes here
-    %   Detailed explanation goes here
-
+    %DataLoadYahooSetUp is class data holder to hold input required 
+    %to download data from Yahoo
+    %   
+    % Input arguments
+    %   filename: name of file where the symbols, marketCapData are stored
+    %   sheetnameSymbolList {mustBeText, mustBeTextScalar}
+    % ====================================================================
     properties
-        Property1
+        filename {mustBeText, mustBeFile, mustBeTextScalar} = "filename"
+        sheetnamesymMarketCapReference {mustBeText} = "SymMarketCapReference"
+        startDate datetime = datetime("1-Jan-2010")
+        endDate datetime = datetime("today")
+        interval = "1d"
     end
 
     methods
-        function obj = DataLoadYahooSetUp(inputArg1,inputArg2)
-            %UNTITLED8 Construct an instance of this class
-            %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
-        end
-
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+        function obj = DataLoadYahooSetUp(filename, ...
+                sheetnamesymMarketCapReference, startDate, endDate, interval)
+            
+            %DataLoadYahooSetUp Construct an instance of this class
+            obj.filename = filename;
+            obj.sheetnamesymMarketCapReference = sheetnamesymMarketCapReference;
+            obj.startDate = startDate;
+            obj.endDate = endDate;
+            obj.interval = interval;
+            
         end
     end
 end

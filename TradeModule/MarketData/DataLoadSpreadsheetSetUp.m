@@ -1,22 +1,37 @@
 classdef DataLoadSpreadsheetSetUp
-    %UNTITLED10 Summary of this class goes here
-    %   Detailed explanation goes here
-
+    %DataLoadSpreadsheetSetUp is class data holder to hold input required to
+    % save data
+    %   
+    % Input arguments
+    %   filename: file name of spreadsheet
+    %   openPriceSheetname: sheet name where openPriceSheetname is stored
+    %   highPriceSheetname: sheet name where highPriceSheetname is stored
+    %   lowPriceSheetname: sheet name where lowPriceSheetname is stored
+    %   closePriceSheetname: sheet name where closePriceSheetname is stored
+    %   volumeSheetname: sheet name where volumeSheetname is stored
+    %======================================================================
+    
     properties
-        Property1
+        filename {mustBeText, mustBeFile, mustBeTextScalar} = "filename"
+        openPriceSheetname {mustBeText, mustBeTextScalar} = "openPriceSheetname"
+        lowPriceSheetname {mustBeText, mustBeTextScalar} = "lowPriceSheetname"
+        highPriceSheetname {mustBeText, mustBeTextScalar} = "highPriceSheetname"
+        closePriceSheetname {mustBeText, mustBeTextScalar} = "lowPriceSheetname"
+        volumeSheetname {mustBeText, mustBeTextScalar} = "closePriceSheetname"        
     end
 
     methods
-        function obj = DataLoadSpreadsheetSetUp(inputArg1,inputArg2)
-            %UNTITLED10 Construct an instance of this class
-            %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
-        end
+        function obj = DataLoadSpreadsheetSetUp(filename, openPriceSheetname,...
+                lowPriceSheetname, highPriceSheetname, closePriceSheetname,...
+                volumeSheetname)
+            %DataLoadSpreadsheetSetUp Construct an instance of this class
 
-        function outputArg = method1(obj,inputArg)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+            obj.filename = filename;
+            obj.openPriceSheetname = openPriceSheetname;
+            obj.highPriceSheetname = highPriceSheetname;
+            obj.lowPriceSheetname = lowPriceSheetname;
+            obj.closePriceSheetname = closePriceSheetname;
+            obj.volumeSheetname = volumeSheetname;
         end
     end
 end
