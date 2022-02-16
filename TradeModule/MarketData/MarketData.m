@@ -34,7 +34,7 @@ classdef MarketData
         startDate = datetime("1-Jan-2018")
         endDate = datetime("today")
         interval = "1d"
-        maxRetry = 1;
+        maxRetry = 3;
         
         % SpreadsheetDataLoadSetUp
         spreadhseetData_filename = "DataInput\PriceVolumeInput.xlsx"

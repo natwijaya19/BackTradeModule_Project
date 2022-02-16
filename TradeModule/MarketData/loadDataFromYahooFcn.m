@@ -19,7 +19,6 @@ end
 sampledata = table2timetable (sampledata);
 sz = [size(sampledata, 1) 1] ;
 
-
 % Fetch composite index (IHSG) benchmark data for data cleaning
 index = timetable('Size', sz, 'VariableTypes', "double", 'RowTimes', sampledata.Date, 'VariableNames',"SampleData");
 
