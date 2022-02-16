@@ -15,10 +15,10 @@ highpriceTT = priceVolumeRaw.highPrice;
 lowpriceTT = priceVolumeRaw.lowPrice;
 closepriceTT = priceVolumeRaw.closePrice;
 volumeTT = priceVolumeRaw.volume ;
-indexIHSGTT = priceVolumeData.indexIHSG ;
+indexIHSGTT = priceVolumeRaw.indexIHSG ;
 
 % number of symbol
-symList = sort(eraseBetween(string(priceVolumeData.volumeTT.Properties.VariableNames),5,11)) ;
+symList = sort(eraseBetween(string(volumeTT.Properties.VariableNames),5,11)) ;
 nsym = numel (symList) ; 
 
 % Rearrange symbol alphabetcicaly
@@ -40,13 +40,85 @@ volumeTT = volumeTT(:,strcat(symList,"_volume")) ;
 
 
 %% Substitute and change non numeric data to numeric
+[indexIHSGTT, openpriceNumerTT, highpriceNumerTT, lowpriceNumerTT,...
+    closepriceNumerTT, volumeNumerTT] = convertToNumericFcn(indexIHSGTT,...
+    openpriceTT, nsym, symList, highpriceTT, lowpriceTT, closepriceTT,...
+    volumeTT);
+
+%% Fill missing data with the previous and next in timeseries data 
+% openprice
+[openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,... 
+    closepriceFilledTT, volumepriceFilledTT, indexIHSGTT]...
+    = fillMissingFcn(openpriceNumerTT, highpriceNumerTT,...
+    lowpriceNumerTT, closepriceNumerTT, volumeNumerTT, indexIHSGTT);
+
+%% cleanPriceChangeLimitFcn to remove price changes beyond ARB and ARA limit
+
+[openpriceCleanTT, highpriceCleanTT, lowpriceCleanTT, closepriceCleanTT,...
+    volumeCleanTT] = cleanPriceChangeLimitFcn(closepriceFilledTT,...
+    openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,...
+    volumepriceFilledTT);
+
+
+%% Transfer ARA and ARB error-free dataset into struct output
+
+priceVolumeClean.openPrice= openpriceCleanTT ;
+priceVolumeClean.highPrice = highpriceCleanTT ;
+priceVolumeClean.lowPrice = lowpriceCleanTT ;
+priceVolumeClean.closePrice = closepriceCleanTT ;
+priceVolumeClean.volume= volumeCleanTT ;
+priceVolumeClean.indexIHSG = indexIHSGTT;
+
+% Remove non-output variables 
+clearvars -except priceVolumeClean
+
+
+end
+
+%% fillMissingFcn
+function [openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,...
+ closepriceFilledTT, volumepriceFilledTT, indexIHSGTT] =...
+ fillMissingFcn(openpriceNumerTT, highpriceNumerTT, lowpriceNumerTT,...
+ closepriceNumerTT, volumeNumerTT, indexIHSGTT)
+
+openpriceFilledTT   = fillmissing(openpriceNumerTT, "previous") ;
+openpriceFilledTT   = fillmissing(openpriceFilledTT, "next") ;
+
+% highprice
+highpriceFilledTT   = fillmissing(highpriceNumerTT, "previous") ;
+highpriceFilledTT   = fillmissing(highpriceFilledTT, "next") ;
+
+% lowprice
+lowpriceFilledTT   = fillmissing(lowpriceNumerTT, "previous") ;
+lowpriceFilledTT   = fillmissing(lowpriceFilledTT, "next") ;
+
+% closeprice
+closepriceFilledTT   = fillmissing(closepriceNumerTT, "previous") ;
+closepriceFilledTT   = fillmissing(closepriceFilledTT, "next") ;
+
+% volume
+volumepriceFilledTT   = fillmissing(volumeNumerTT, "previous") ;
+volumepriceFilledTT   = fillmissing(volumepriceFilledTT, "next") ;
+
+% indexIHSGTT
+indexIHSGTT = fillmissing(indexIHSGTT, "previous");
+indexIHSGTT = fillmissing(indexIHSGTT, "next");
+end
+
+%% convertToNumericFcn
+function [indexIHSGTT, openpriceNumerTT, highpriceNumerTT, ...
+    lowpriceNumerTT, closepriceNumerTT, volumeNumerTT]...
+    = convertToNumericFcn(indexIHSGTT, openpriceTT, nsym, symList,...
+    highpriceTT, lowpriceTT, closepriceTT, volumeTT)
+
 % indexIHSGTT change to numeric
-indexIHSGTT.Variables = string(indexIHSGTT.Variables);
-indexIHSGTT.Variables = str2double(indexIHSGTT.Variables);
+indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "previous");
+indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "next");
+indexIHSGTT.Variables = double(indexIHSGTT.Variables);
 
 % preallocate
-nrows = length(priceVolumeData.openpriceTT.Time) ;
-TT1 = timetable(priceVolumeData.openpriceTT.Time, zeros(nrows,1)) ;
+nrows = length(openpriceTT.Time) ;
+TT1 = timetable(openpriceTT.Time, zeros(nrows,1)) ;
 TT = repmat(TT1,1,nsym) ; % Prealltocation
 
 % Preallocate openprice
@@ -71,7 +143,7 @@ volumeNumerTT.Properties.VariableNames = strcat(symList,"_volume") ;
 
 %% transfer variables per symbol
 for idx = 1:nsym
-%     idx = 63 % for test
+    %     idx = 63 % for test
 
     idx;
     sym_i = symList(idx) ;
@@ -103,33 +175,13 @@ for idx = 1:nsym
     volumeNumerTT(:,idx).Variables       = volumeSym_i ;
     
 end
+end
 
-%% Fill missing data with the previous and next in timeseries data 
-% openprice
-openpriceFilledTT   = fillmissing(openpriceNumerTT, "previous") ;
-openpriceFilledTT   = fillmissing(openpriceFilledTT, "next") ;
-
-% highprice
-highpriceFilledTT   = fillmissing(highpriceNumerTT, "previous") ;
-highpriceFilledTT   = fillmissing(highpriceFilledTT, "next") ;
-
-% lowprice
-lowpriceFilledTT   = fillmissing(lowpriceNumerTT, "previous") ;
-lowpriceFilledTT   = fillmissing(lowpriceFilledTT, "next") ;
-
-% closeprice
-closepriceFilledTT   = fillmissing(closepriceNumerTT, "previous") ;
-closepriceFilledTT   = fillmissing(closepriceFilledTT, "next") ;
-
-% volume
-volumepriceFilledTT   = fillmissing(volumeNumerTT, "previous") ;
-volumepriceFilledTT   = fillmissing(volumepriceFilledTT, "next") ;
-
-% indexIHSGTT
-indexIHSGTT = fillmissing(indexIHSGTT, "previous");
-indexIHSGTT = fillmissing(indexIHSGTT, "next");
-
-
+%% cleanPriceChangeLimitFcn
+function [openpriceCleanTT, highpriceCleanTT, lowpriceCleanTT,...
+    closepriceCleanTT, volumeCleanTT] = cleanPriceChangeLimitFcn(...
+    closepriceFilledTT, openpriceFilledTT, highpriceFilledTT,...
+    lowpriceFilledTT, volumepriceFilledTT)
 %% Identify daily ret crossing the arb and ara limit
 closepriceretTT = tick2ret (closepriceFilledTT) ;
 closepriceret = closepriceretTT.Variables ;
@@ -187,19 +239,4 @@ volumeCleanTT = volumepriceFilledTT ;
 volumeClean = volumeCleanTT.Variables ;
 volumeClean(:,crosslimitposition) = nan ;
 volumeCleanTT.Variables = volumeClean ;
-
-
-%% Transfer ARA and ARB error-free dataset into struct output
-
-priceVolumeClean.openPrice= openpriceCleanTT ;
-priceVolumeClean.highPrice = highpriceCleanTT ;
-priceVolumeClean.lowPrice = lowpriceCleanTT ;
-priceVolumeClean.closePrice = closepriceCleanTT ;
-priceVolumeClean.volumePrice= volumeCleanTT ;
-priceVolumeClean.indexIHSG = indexIHSGTT;
-
-% Remove non-output variables 
-clearvars -except priceVolumeClean
-
-
 end

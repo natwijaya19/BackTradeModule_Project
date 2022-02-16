@@ -54,10 +54,11 @@ lowpricedata = openpricedata;
 closepricedata = openpricedata;
 volumedata = openpricedata;
 
+checkDisp = 0:25:1000;
 for i = 1: niters
-    symi = char ((strcat (symList(i),".JK"))) ;
+    symi = char ((strcat (symList(i),".JK")));
+
     %display for progress monitoring
-    checkDisp = 0:25:1000;
     if  ismember (i,checkDisp)
         disp(i)
     end
@@ -161,7 +162,7 @@ priceVolumeData.closePrice = closepriceTT;
 priceVolumeData.volume = volumeTT;
 priceVolumeData.indexIHSG = indexIHSG;
 
-clearvars -except priceVolumeDataRaw
+clearvars -except priceVolumeData
 
 end
 
