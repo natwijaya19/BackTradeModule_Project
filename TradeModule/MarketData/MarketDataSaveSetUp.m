@@ -12,26 +12,12 @@ classdef MarketDataSaveSetUp
     %======================================================================
     
     properties
-        filename {mustBeText, mustBeFile, mustBeTextScalar} = "filename"
-        openPriceSheetname {mustBeText, mustBeTextScalar} = "openPriceSheetname"
-        lowPriceSheetname {mustBeText, mustBeTextScalar} = "lowPriceSheetname"
-        highPriceSheetname {mustBeText, mustBeTextScalar} = "highPriceSheetname"
-        closePriceSheetname {mustBeText, mustBeTextScalar} = "lowPriceSheetname"
-        volumeSheetname {mustBeText, mustBeTextScalar} = "closePriceSheetname"        
+        filename {mustBeText, mustBeTextScalar} = "DataInput\PriceVolumeInput"
+        openPriceSheetname {mustBeText, mustBeTextScalar} = "openPrice"
+        lowPriceSheetname {mustBeText, mustBeTextScalar} = "lowPrice"
+        highPriceSheetname {mustBeText, mustBeTextScalar} = "highPrice"
+        closePriceSheetname {mustBeText, mustBeTextScalar} = "lowPrice"
+        volumeSheetname {mustBeText, mustBeTextScalar} = "volume"        
     end
 
-    methods
-        function obj = MarketDataSaveSetUp(filename, openPriceSheetname,...
-                lowPriceSheetname, highPriceSheetname, closePriceSheetname,...
-                volumeSheetname)
-            %MarketDataSaveSetUp Construct an instance of this class
-
-            obj.filename = filename;
-            obj.openPriceSheetname = openPriceSheetname;
-            obj.highPriceSheetname = highPriceSheetname;
-            obj.lowPriceSheetname = lowPriceSheetname;
-            obj.closePriceSheetname = closePriceSheetname;
-            obj.volumeSheetname = volumeSheetname;
-        end
-    end
 end

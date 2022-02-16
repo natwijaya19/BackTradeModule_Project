@@ -2,12 +2,7 @@ classdef MarketData
     %MarketData Summary of this class goes here
     %   
     % Input arguments
-    %   - dataLoadYahooSetUp: parameters object data required to download 
-    %       data from Yahoo
-    %   - dataLoadSpreadsheetSetUp: parameters object required  to load data
-    %       from spreadsheet
-    %   - marketDataSaveSetUp: parameters object required to save data into
-    %       spreadsheet
+ 
     % 
     % Other properties
     %   symbols {mustBeText} = []
@@ -19,6 +14,7 @@ classdef MarketData
     %   marketCap timetable = []
     %   marketCapCategory timetable = []
     %   SymMarketCapRef table = []
+    %   MarketCapRangeRef table = []
 
     % Methods
     %   loadSymbolMCapRef
@@ -27,26 +23,51 @@ classdef MarketData
     %   cleanData
     %   saveDataToSpreadsheet
 
-%% Properties and methods definitions
-%==========================================================================
-
+%------------------------------------------------------------------------
+%% Properties section
+%------------------------------------------------------------------------
     properties
-        dataLoadYahooSetUp DataLoadYahooSetUp = []
-        dataLoadSpreadsheetSetUp DataLoadSpreadsheetSetUp = []
-        marketDataSaveSetUp MarketDataSaveSetUp = []
+        % YahooDataLoadSetUp
+        yahooData_fileName = "DataInput\Symbols_MarketCap_MarketCapCategoryRange.xlsx"
+        yahooData_symMktCapSheetName = "SymbolsMarketCapReference"
+        yahooData_mktCapCategRangeSheet = "MarketCap_Category_Range"
+        startDate = datetime("1-Jan-2018")
+        endDate = datetime("today")
+        interval = "1d"
+        maxRetry = 5;
+        
+        % SpreadsheetDataLoadSetUp
+        spreadhseetData_filename = "DataInput\PriceVolumeInput"
+        spreadhseetData_openPriceSheet = "openPrice"
+        spreadhseetData_lowPriceSheet = "lowPrice"
+        spreadhseetData_highPriceSheet = "highPrice"
+        spreadhseetData_closePriceSheet = "lowPrice"
+        spreadhseetData_volumeSheet = "volume"
+        spreadhseetData_IndexIHSGSheet = "IndexIHSG"
+
+        % SpreadsheetDataLoadSetUp
+        saveData_filename = "DataInput\PriceVolumeInput"
+        saveData_openPriceSheet = "openPrice"
+        saveData_lowPriceSheet = "lowPrice"
+        saveData_highPriceSheet = "highPrice"
+        saveData_closePriceSheet= "lowPrice"
+        saveData_volumeSheet = "volume"
+        saveData_IndexIHSGSheet = "IndexIHSG"
 
     end
 
     properties (SetAccess = private)
-        symbols {mustBeText} = []
-        openPrice timetable = []
-        highPrice timetable = []
-        lowPrice timetable = []
-        closePrice timetable = []
-        volume timetable = []
-        marketCap timetable = []
-        marketCapCategory timetable = []
-        SymMarketCapRef table = []
+        symbols 
+        openPrice
+        highPrice
+        lowPrice 
+        closePrice 
+        volume 
+        indexIHSG
+        marketCap 
+        marketCapCategory 
+        symMarketCapRef 
+        marketCapRangeRef 
     end
 
     properties (Constant)
@@ -54,42 +75,43 @@ classdef MarketData
         priceChangeLimit = [-0.35, 35]
     end
 
+%------------------------------------------------------------------------
+%% Methods section
+%------------------------------------------------------------------------
     methods
-        function obj = MarketData(dataLoadYahooSetUp,...
-                dataLoadSpreadsheetSetUp, marketDataSaveSetUp)
-            %MarketData Construct an instance of this class
-            obj.dataLoadYahooSetUp = dataLoadYahooSetUp;
-            obj.dataLoadSpreadsheetSetUp = dataLoadSpreadsheetSetUp;
-            obj.marketDataSaveSetUp = marketDataSaveSetUp;
-        end
 
         function obj = loadSymbolMCapRef(obj)
             %loadSymbolMCapRef Summary of this method goes here
-            
-            % transfer value
-            fileName = obj.dataLoadYahooSetUp.filename;
-            sheetName = obj.dataLoadYahooSetUp.sheetnameSymbolList;
-            obj.SymMarketCapRef = readtable(fileName, Sheet=sheetName);
+
+            fileName = obj.yahooData_fileName;
+            sheetNameSymCap = obj.yahooData_symMktCapSheetName;
+            sheetNamecaptCategRange = obj.yahooData_mktCapCategRangeSheet;
+
+            obj.symMarketCapRef = readtable(fileName, Sheet=sheetNameSymCap);
+            obj.marketCapRangeRef = readtable(fileName, Sheet=sheetNamecaptCategRange);
+            obj.symbols = string(obj.symMarketCapRef.Symbol);           
         end
 
         function obj = loadDataFromYahoo(obj)
             %loadDataFromYahoo Summary of this method goes here
             %TODO
+            % load data from Yahoo using background pool
 
-            symbols = obj.symbols;
-            startDate = obj.dataLoadYahooSetUp.startDate;
-            endDate = obj.dataLoadYahooSetUp.endDate;
-            interval = obj.dataLoadYahooSetUp.interval;
+            numOut = 1; % number of function output from calc.
+            F = parfevalOnAll(@loadDataFromYahooFcn, numOut, obj.symbols, ...
+                obj.startDate, obj.endDate, obj.interval, obj.maxRetry);
+            priceVolumeData = fetchOutputs(F);
 
-            % load data from Yahoo
-            structOut = loadDataFromYahooFcn (symbols, startdate, endDate, interval);
+%             priceVolumeData = loadDataFromYahooFcn (obj.symbols,...
+%                 obj.startDate, obj.endDate, obj.interval, obj.maxRetry);
             
             % transfer value to object
-            obj.openPrice = structOut.openPrice;
-            obj.highPrice = structOut.highPrice;
-            obj.lowPrice = structOut.lowPrice;
-            obj.closePrice = structOut.closePrice;
-            obj.volume = structOut.volumePrice;
+            obj.openPrice = priceVolumeData.openPrice;
+            obj.highPrice = priceVolumeData.highPrice;
+            obj.lowPrice = priceVolumeData.lowPrice;
+            obj.closePrice = priceVolumeData.closePrice;
+            obj.volume = priceVolumeData.volumePrice;
+            obj.indexIHSG = priceVolumeData.indexIHSG;
         end
         
         function outputArg = loadDataFromSpreadsheet(obj,inputArg)
@@ -115,16 +137,3 @@ end
 %% Helper functions
 %==========================================================================
 
-function structOut = loadDataFromYahooFcn (symbols, startDate, endDate, interval) 
-
-    %TODO Loop
-    datai = getMarketDataViaYahoo(symbols, startDate, endDate, interval);
-
-    structOut.openPrice = openPriceTT;
-    structOut.highPrice = highPriceTT;
-    structOut.lowPrice = lowPriceTT;
-    structOut.closePrice = closePriceTT;
-    structOut.volume = volumeTT;
-
-    clearvars -except structOut
-end

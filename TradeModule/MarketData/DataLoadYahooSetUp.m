@@ -7,24 +7,12 @@ classdef DataLoadYahooSetUp
     %   sheetnameSymbolList {mustBeText, mustBeTextScalar}
     % ====================================================================
     properties
-        filename {mustBeText, mustBeFile, mustBeTextScalar} = "filename"
-        sheetnamesymMarketCapReference {mustBeText} = "SymMarketCapReference"
+        fileName {mustBeText} = "DataInput\SymbolsMarketCapReference.xlsx"
+        symMarketCapReferenceSheetName {mustBeText} = "SymbolsMarketCapReference"
+        marketCapCategoryRangeRefSheetName {mustBeText} = "MarketCap_Category_Range"
         startDate datetime = datetime("1-Jan-2010")
         endDate datetime = datetime("today")
         interval = "1d"
     end
 
-    methods
-        function obj = DataLoadYahooSetUp(filename, ...
-                sheetnamesymMarketCapReference, startDate, endDate, interval)
-            
-            %DataLoadYahooSetUp Construct an instance of this class
-            obj.filename = filename;
-            obj.sheetnamesymMarketCapReference = sheetnamesymMarketCapReference;
-            obj.startDate = startDate;
-            obj.endDate = endDate;
-            obj.interval = interval;
-            
-        end
-    end
 end
