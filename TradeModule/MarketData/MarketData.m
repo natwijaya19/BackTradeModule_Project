@@ -184,8 +184,8 @@ function marketCap = calculateMarketCapFcn (inputArgs)
     symbols = sort(eraseBetween(string(marketData.volume.Properties.VariableNames),5,11)) ;
     timeCol = marketData.volume.Time;
     varType = repmat(["double"], 1,numel(symbols));
-    marketCap = timetable('Size', [numel(timeCol), numel(symbols)], 'VariableTypes', varType ,...
-        'RowTimes', timeCol, VariableNames=symbols);
+    marketCap = timetable('Size', [numel(timeCol), numel(symbols)],...
+        'VariableTypes', varType , 'RowTimes', timeCol, VariableNames=symbols);
     
     for symIdx = 1:numel(symbols)
     
@@ -204,6 +204,7 @@ function marketCap = calculateMarketCapFcn (inputArgs)
     
 end
 
+%---------------------------------------------------------------------------
 %% calcMktCapCategoryFcn
 function marketCapCategory = calcMktCapCategoryFcn(inputArg) 
     % calcMktCapCategoryFcn to categorize MktCap
@@ -212,13 +213,17 @@ function marketCapCategory = calcMktCapCategoryFcn(inputArg)
     symbols = sort(eraseBetween(string(marketData.volume.Properties.VariableNames),5,11)) ;
     timeCol = marketData.volume.Time;
     varType = repmat(["string"], 1,numel(symbols));
-    marketCapCategory  = timetable('Size', [numel(timeCol), numel(symbols)], 'VariableTypes', varType ,...
-        'RowTimes', timeCol, VariableNames=symbols);
+    marketCapCategory  = timetable('Size', [numel(timeCol), numel(symbols)],...
+        'VariableTypes', varType ,'RowTimes', timeCol, VariableNames=symbols);
     marketCapRangeRef = sortrows(marketData.marketCapRangeRef, "UB","ascend"); 
     UB = marketCapRangeRef.UB;
     edges = sort([UB(:); 0 ],"ascend");
     category = (marketCapRangeRef.CapCategory) ;
-    marketCapCategoryVar = discretize(marketCap.Variables, edges, 'categorical', category, 'IncludedEdge','left');
+    marketCapCategoryVar = discretize(marketCap.Variables, edges,...
+        'categorical', category, 'IncludedEdge','left');
     marketCapCategory.Variables = string(marketCapCategoryVar);
 
 end
+
+% END
+%========================================================================
