@@ -157,7 +157,7 @@ classdef MarketData
             obj.lowPrice = priceVolume.lowPrice;
             obj.closePrice = priceVolume.closePrice;
             obj.volume = priceVolume.volume;
-            obj.indexIHSG = priceVolume.indexIHSG;
+%             obj.indexIHSG = priceVolume.indexIHSG;
 
         end
 
@@ -180,7 +180,6 @@ classdef MarketData
             obj.lowPrice = priceVolumeClean.lowPrice;
             obj.closePrice = priceVolumeClean.closePrice;
             obj.volume = priceVolumeClean.volume ;
-            obj.indexIHSG = priceVolumeClean.indexIHSG;
 
             % calculate market cap for each symbol over the time
             marketCap = calculateMarketCapFcn (obj);

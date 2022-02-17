@@ -14,7 +14,6 @@ highPriceTT = priceVolumeRaw.highPrice;
 lowpPiceTT = priceVolumeRaw.lowPrice;
 closePriceTT = priceVolumeRaw.closePrice;
 volumeTT = priceVolumeRaw.volume;
-indexIHSGTT = priceVolumeRaw.indexIHSG;
 
 % take only timeseries data based on the symbolsRef based
 
@@ -55,15 +54,15 @@ priceVolumeStruct.volume = volumeTT;
 
 %% Substitute and change non numeric data to numeric
 %--------------------------------------------------------------------------
-[priceVolumeNumerStruct, indexIHSGTT] = convertToNumericFcn(priceVolumeStruct,...
-    indexIHSGTT, symList);
+[priceVolumeNumerStruct] = convertToNumericFcn(priceVolumeStruct,...
+                            symList);
 
 %% Fill missing data with the previous and next in timeseries data 
 %--------------------------------------------------------------------------
 priceVolumeStruct = priceVolumeNumerStruct;
 
-[priceVolumeFilledStruct, indexIHSGTT]...
-    = fillMissingFcn(priceVolumeStruct, indexIHSGTT);
+[priceVolumeFilledStruct]...
+    = fillMissingFcn(priceVolumeStruct);
 
 
 %% cleanPriceChangeLimitFcn to remove price changes beyond ARB and ARA limit
@@ -82,8 +81,7 @@ priceVolumeClean.openPrice= openpriceCleanTT ;
 priceVolumeClean.highPrice = highpriceCleanTT ;
 priceVolumeClean.lowPrice = lowpriceCleanTT ;
 priceVolumeClean.closePrice = closepriceCleanTT ;
-priceVolumeClean.volume= volumeCleanTT ;
-priceVolumeClean.indexIHSG = indexIHSGTT;
+priceVolumeClean.volume = volumeCleanTT ;
 
 % Remove non-output variables 
 clearvars -except priceVolumeClean
@@ -91,9 +89,13 @@ clearvars -except priceVolumeClean
 
 end
 
+%% Helper local function
+%=========================================================================
+
+
 %% fillMissingFcn
-function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
-    priceVolumeStruct, indexIHSGTT)
+function [priceVolumeFilledStruct] = fillMissingFcn(...
+    priceVolumeStruct)
     
     % data preparation
     % transfer variable value
@@ -116,8 +118,6 @@ function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
     lowPriceVar = string(lowPrice.Variables);
     closePriceVar = string(closePrice.Variables);
     volumeVar = string(volume.Variables);
-    indexIHSGVar = string(indexIHSGTT.Variables);
-
 
     % convert string to double 
     openPriceVar = double(openPriceVar);
@@ -125,14 +125,12 @@ function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
     lowPriceVar = double(lowPriceVar);
     closePriceVar = double(closePriceVar);
     volumeVar = double(volumeVar);
-    indexIHSGVar = double(indexIHSGVar);
     
     % for price data, fill zero with nan
     openPriceVar(openPriceVar == 0) = nan;
     highPriceVar(highPriceVar == 0) = nan;
     lowPriceVar(lowPriceVar == 0) = nan;
     closePriceVar(closePriceVar == 0) = nan;
-    indexIHSGVar(indexIHSGVar == 0) = nan;
 
     % for volume data, fill nan with zero
     volumeVar(isnan(volumeVar)) = 0;
@@ -143,9 +141,7 @@ function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
     lowPrice.Variables = lowPriceVar;
     closePrice.Variables = closePriceVar;
     volume.Variables = volumeVar;
-    indexIHSGTT.Variables = indexIHSGVar;
 
-    
     % start fill missing value
 
     % openprice
@@ -168,23 +164,18 @@ function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
     volumeFilledTT   = fillmissing(volume, "previous") ;
     volumeFilledTT   = fillmissing(volumeFilledTT, "next") ;
     
-    % indexIHSGTT
-    indexIHSGTT = fillmissing(indexIHSGTT, "previous");
-    indexIHSGTT = fillmissing(indexIHSGTT, "next");
-    
     priceVolumeFilledStruct.openPrice = openpriceFilledTT;
     priceVolumeFilledStruct.highPrice = highpriceFilledTT;
     priceVolumeFilledStruct.lowPrice = lowpriceFilledTT;
     priceVolumeFilledStruct.closePrice = closepriceFilledTT;
     priceVolumeFilledStruct.volume = volumeFilledTT;
 
-    clearvars -except priceVolumeFilledStruct indexIHSGTT
+    clearvars -except priceVolumeFilledStruct 
 end
 
 %% convertToNumericFcn
-function [priceVolumeNumerStruct, indexIHSGTT]...
-    = convertToNumericFcn(priceVolumeStruct,...
-    indexIHSGTT, symList)
+function [priceVolumeNumerStruct]...
+    = convertToNumericFcn(priceVolumeStruct, symList)
 
     % transfer variable value
     openPriceTT = priceVolumeStruct.openPrice;
@@ -193,11 +184,6 @@ function [priceVolumeNumerStruct, indexIHSGTT]...
     closePriceTT = priceVolumeStruct.closePrice;
     volumeTT = priceVolumeStruct.volume;
     nSym = numel(symList);
-
-    % indexIHSGTT change to numeric
-    indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "previous");
-    indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "next");
-    indexIHSGTT.Variables = double(indexIHSGTT.Variables);
     
     % preallocate
     nrows = length(openPriceTT.Time) ;
@@ -265,7 +251,7 @@ function [priceVolumeNumerStruct, indexIHSGTT]...
         priceVolumeNumerStruct.closePrice  = closePriceNumerTT;
         priceVolumeNumerStruct.volume = volumeNumerTT;
          
-        clearvars -except priceVolumeNumerStruct indexIHSGTT
+        clearvars -except priceVolumeNumerStruct 
 end
 
 %% cleanPriceChangeLimitFcn

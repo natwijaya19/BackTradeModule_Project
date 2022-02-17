@@ -18,7 +18,7 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
 
     % get nRow from sampleData 
     symbols = sort(symbols,"ascend");
-    sampleSymbol = "BBCA.JK";
+    sampleSymbol = 'BBCA.JK';
     
     % sample data for preallocation TT in loop
     sampleData = getMarketDataViaYahoo(char(sampleSymbol), startDate, endDate, interval);
@@ -90,9 +90,11 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
 
     
     % load indexIHSG
-    indexIHSGSymbol = "^JKSE";
+    indexIHSGSymbol = '^JKSE';
     
-    indexIHSG = tryGetMarketDataViaYahoo(indexIHSGSymbol, startDate, endDate, interval, maxRetry, TT);
+    indexIHSG = tryGetMarketDataViaYahoo(indexIHSGSymbol, startDate,...
+        endDate, interval, maxRetry, TT);
+
     % replace string .JK from each symbol name with _open, _high, _low, _close
     % and _volume
     openPriceVar = openPriceTT.Properties.VariableNames;
