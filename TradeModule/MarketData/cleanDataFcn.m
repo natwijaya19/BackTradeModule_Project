@@ -1,4 +1,4 @@
-function priceVolumeClean = cleanDataFcn (priceVolumeRaw)
+function priceVolumeClean = cleanDataFcn (priceVolumeRaw, symbolRef)
 % cleandataFcn is function to preprocess data
 % 
 % Preprocessing steps: 
@@ -7,61 +7,77 @@ function priceVolumeClean = cleanDataFcn (priceVolumeRaw)
 %   - Fill missing data with the previous and next in timeseries data 
 %   - Remove symbols or data column containing price changes larger than ARA & ARB limit 
 % 
-%% Preprocessing is getting started
-
+%% Preprocessing
 % Transfer data
-openpriceTT = priceVolumeRaw.openPrice;
-highpriceTT = priceVolumeRaw.highPrice;
-lowpriceTT = priceVolumeRaw.lowPrice;
-closepriceTT = priceVolumeRaw.closePrice;
-volumeTT = priceVolumeRaw.volume ;
-indexIHSGTT = priceVolumeRaw.indexIHSG ;
+openPriceTT = priceVolumeRaw.openPrice;
+highPriceTT = priceVolumeRaw.highPrice;
+lowpPiceTT = priceVolumeRaw.lowPrice;
+closePriceTT = priceVolumeRaw.closePrice;
+volumeTT = priceVolumeRaw.volume;
+indexIHSGTT = priceVolumeRaw.indexIHSG;
+
+% take only timeseries data based on the symbolsRef based
 
 % number of symbol
-symList = sort(eraseBetween(string(volumeTT.Properties.VariableNames),5,11)) ;
-nsym = numel (symList) ; 
+symList = sort(symbolRef, "ascend");
+nSym = numel (symList) ; 
 
-% Rearrange symbol alphabetcicaly
+symListOpenPrice = strcat(symList,"_open");
+symListHighPrice = strcat(symList,"_high");
+symListLowPrice = strcat(symList,"_low");
+symListClosePrice = strcat(symList,"_close");
+symListvolume = strcat(symList,"_volume");
+
+%% Rearrange symbol alphabetcicaly
+%--------------------------------------------------------------------------
 % openprice
-openpriceTT = openpriceTT(:,strcat(symList,"_open")) ;
+openPriceTT = openPriceTT(:,symListOpenPrice) ;
 
 % highprice
-highpriceTT = highpriceTT(:,strcat(symList,"_high")) ;
+highPriceTT = highPriceTT(:,symListHighPrice) ;
 
 % lowprice
-lowpriceTT = lowpriceTT(:,strcat(symList,"_low")) ;
+lowpPiceTT = lowpPiceTT(:,symListLowPrice) ;
 
 % closeprice
-closepriceTT = closepriceTT(:,strcat(symList,"_close")) ;
+closePriceTT = closePriceTT(:,symListClosePrice) ;
 
 % volume
-volumeTT = volumeTT(:,strcat(symList,"_volume")) ;
+volumeTT = volumeTT(:,symListvolume) ;
 
+% put price volume data into struct
+priceVolumeStruct.openPrice = openPriceTT ;
+priceVolumeStruct.highPrice = highPriceTT;
+priceVolumeStruct.lowPrice = lowpPiceTT;
+priceVolumeStruct.closePrice = closePriceTT;
+priceVolumeStruct.volume = volumeTT;
 
 
 %% Substitute and change non numeric data to numeric
-[indexIHSGTT, openpriceNumerTT, highpriceNumerTT, lowpriceNumerTT,...
-    closepriceNumerTT, volumeNumerTT] = convertToNumericFcn(indexIHSGTT,...
-    openpriceTT, nsym, symList, highpriceTT, lowpriceTT, closepriceTT,...
-    volumeTT);
+%--------------------------------------------------------------------------
+[priceVolumeNumerStruct, indexIHSGTT] = convertToNumericFcn(priceVolumeStruct,...
+    indexIHSGTT, symList);
 
 %% Fill missing data with the previous and next in timeseries data 
-% openprice
-[openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,... 
-    closepriceFilledTT, volumepriceFilledTT, indexIHSGTT]...
-    = fillMissingFcn(openpriceNumerTT, highpriceNumerTT,...
-    lowpriceNumerTT, closepriceNumerTT, volumeNumerTT, indexIHSGTT);
+%--------------------------------------------------------------------------
+priceVolumeStruct = priceVolumeNumerStruct;
+
+[priceVolumeFilledStruct, indexIHSGTT]...
+    = fillMissingFcn(priceVolumeStruct, indexIHSGTT);
+
 
 %% cleanPriceChangeLimitFcn to remove price changes beyond ARB and ARA limit
+%--------------------------------------------------------------------------
+
+% transfer variable value
+priceVolumeStruct = priceVolumeFilledStruct;
 
 [openpriceCleanTT, highpriceCleanTT, lowpriceCleanTT, closepriceCleanTT,...
-    volumeCleanTT] = cleanPriceChangeLimitFcn(closepriceFilledTT,...
-    openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,...
-    volumepriceFilledTT);
+    volumeCleanTT] = cleanPriceChangeLimitFcn(priceVolumeStruct);
 
 
 %% Transfer ARA and ARB error-free dataset into struct output
-
+%--------------------------------------------------------------------------
 priceVolumeClean.openPrice= openpriceCleanTT ;
 priceVolumeClean.highPrice = highpriceCleanTT ;
 priceVolumeClean.lowPrice = lowpriceCleanTT ;
@@ -76,113 +92,196 @@ clearvars -except priceVolumeClean
 end
 
 %% fillMissingFcn
-function [openpriceFilledTT, highpriceFilledTT, lowpriceFilledTT,...
- closepriceFilledTT, volumepriceFilledTT, indexIHSGTT] =...
- fillMissingFcn(openpriceNumerTT, highpriceNumerTT, lowpriceNumerTT,...
- closepriceNumerTT, volumeNumerTT, indexIHSGTT)
+function [priceVolumeFilledStruct, indexIHSGTT] = fillMissingFcn(...
+    priceVolumeStruct, indexIHSGTT)
+    
+    % data preparation
+    % transfer variable value
+    openPrice = priceVolumeStruct.openPrice;
+    highPrice = priceVolumeStruct.highPrice;
+    lowPrice = priceVolumeStruct.lowPrice;
+    closePrice = priceVolumeStruct.closePrice;
+    volume = priceVolumeStruct.volume;
 
-openpriceFilledTT   = fillmissing(openpriceNumerTT, "previous") ;
-openpriceFilledTT   = fillmissing(openpriceFilledTT, "next") ;
+    % convert all variables into numeric via this stage:
+    % - let say A is raw data  
+    % - convert to string B = string(A)
+    % - convert to double C = double (B)
+    % - if C is price data, fill zero data with nan >> C(C==0) = nan
+    % - if C is volume data, fill nan with 0 >> C(isnan(C)) = 0
+    
+    % convert all raw data to string
+    openPriceVar = string(openPrice.Variables);
+    highPriceVar = string(highPrice.Variables);
+    lowPriceVar = string(lowPrice.Variables);
+    closePriceVar = string(closePrice.Variables);
+    volumeVar = string(volume.Variables);
+    indexIHSGVar = string(indexIHSGTT.Variables);
 
-% highprice
-highpriceFilledTT   = fillmissing(highpriceNumerTT, "previous") ;
-highpriceFilledTT   = fillmissing(highpriceFilledTT, "next") ;
 
-% lowprice
-lowpriceFilledTT   = fillmissing(lowpriceNumerTT, "previous") ;
-lowpriceFilledTT   = fillmissing(lowpriceFilledTT, "next") ;
+    % convert string to double 
+    openPriceVar = double(openPriceVar);
+    highPriceVar = double(highPriceVar);
+    lowPriceVar = double(lowPriceVar);
+    closePriceVar = double(closePriceVar);
+    volumeVar = double(volumeVar);
+    indexIHSGVar = double(indexIHSGVar);
+    
+    % for price data, fill zero with nan
+    openPriceVar(openPriceVar == 0) = nan;
+    highPriceVar(highPriceVar == 0) = nan;
+    lowPriceVar(lowPriceVar == 0) = nan;
+    closePriceVar(closePriceVar == 0) = nan;
+    indexIHSGVar(indexIHSGVar == 0) = nan;
 
-% closeprice
-closepriceFilledTT   = fillmissing(closepriceNumerTT, "previous") ;
-closepriceFilledTT   = fillmissing(closepriceFilledTT, "next") ;
+    % for volume data, fill nan with zero
+    volumeVar(isnan(volumeVar)) = 0;
 
-% volume
-volumepriceFilledTT   = fillmissing(volumeNumerTT, "previous") ;
-volumepriceFilledTT   = fillmissing(volumepriceFilledTT, "next") ;
+    % transfer back the variables to TT
+    openPrice.Variables = openPriceVar;
+    highPrice.Variables = highPriceVar;
+    lowPrice.Variables = lowPriceVar;
+    closePrice.Variables = closePriceVar;
+    volume.Variables = volumeVar;
+    indexIHSGTT.Variables = indexIHSGVar;
 
-% indexIHSGTT
-indexIHSGTT = fillmissing(indexIHSGTT, "previous");
-indexIHSGTT = fillmissing(indexIHSGTT, "next");
+    
+    % start fill missing value
+
+    % openprice
+    openpriceFilledTT   = fillmissing(openPrice, "previous") ;
+    openpriceFilledTT   = fillmissing(openpriceFilledTT, "next") ;
+    
+    % highprice
+    highpriceFilledTT   = fillmissing(highPrice, "previous") ;
+    highpriceFilledTT   = fillmissing(highpriceFilledTT, "next") ;
+    
+    % lowprice
+    lowpriceFilledTT   = fillmissing(lowPrice, "previous") ;
+    lowpriceFilledTT   = fillmissing(lowpriceFilledTT, "next") ;
+    
+    % closeprice
+    closepriceFilledTT   = fillmissing(closePrice, "previous") ;
+    closepriceFilledTT   = fillmissing(closepriceFilledTT, "next") ;
+    
+    % volume
+    volumeFilledTT   = fillmissing(volume, "previous") ;
+    volumeFilledTT   = fillmissing(volumeFilledTT, "next") ;
+    
+    % indexIHSGTT
+    indexIHSGTT = fillmissing(indexIHSGTT, "previous");
+    indexIHSGTT = fillmissing(indexIHSGTT, "next");
+    
+    priceVolumeFilledStruct.openPrice = openpriceFilledTT;
+    priceVolumeFilledStruct.highPrice = highpriceFilledTT;
+    priceVolumeFilledStruct.lowPrice = lowpriceFilledTT;
+    priceVolumeFilledStruct.closePrice = closepriceFilledTT;
+    priceVolumeFilledStruct.volume = volumeFilledTT;
+
+    clearvars -except priceVolumeFilledStruct indexIHSGTT
 end
 
 %% convertToNumericFcn
-function [indexIHSGTT, openpriceNumerTT, highpriceNumerTT, ...
-    lowpriceNumerTT, closepriceNumerTT, volumeNumerTT]...
-    = convertToNumericFcn(indexIHSGTT, openpriceTT, nsym, symList,...
-    highpriceTT, lowpriceTT, closepriceTT, volumeTT)
+function [priceVolumeNumerStruct, indexIHSGTT]...
+    = convertToNumericFcn(priceVolumeStruct,...
+    indexIHSGTT, symList)
 
-% indexIHSGTT change to numeric
-indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "previous");
-indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "next");
-indexIHSGTT.Variables = double(indexIHSGTT.Variables);
+    % transfer variable value
+    openPriceTT = priceVolumeStruct.openPrice;
+    highPriceTT = priceVolumeStruct.highPrice;
+    lowPriceTT = priceVolumeStruct.lowPrice;
+    closePriceTT = priceVolumeStruct.closePrice;
+    volumeTT = priceVolumeStruct.volume;
+    nSym = numel(symList);
 
-% preallocate
-nrows = length(openpriceTT.Time) ;
-TT1 = timetable(openpriceTT.Time, zeros(nrows,1)) ;
-TT = repmat(TT1,1,nsym) ; % Prealltocation
-
-% Preallocate openprice
-openpriceNumerTT = TT ;
-openpriceNumerTT.Properties.VariableNames = strcat(symList,"_open") ;
-
-% Preallocate highprice
-highpriceNumerTT = TT ;
-highpriceNumerTT.Properties.VariableNames = strcat(symList,"_high") ;
-
-% Preallocate lowprice
-lowpriceNumerTT = TT ;
-lowpriceNumerTT.Properties.VariableNames = strcat(symList,"_low") ;
-
-% Preallocate closeprice
-closepriceNumerTT = TT ;
-closepriceNumerTT.Properties.VariableNames = strcat(symList,"_close") ;
-
-% Preallocate volumeprice
-volumeNumerTT = TT ;
-volumeNumerTT.Properties.VariableNames = strcat(symList,"_volume") ;
-
-%% transfer variables per symbol
-for idx = 1:nsym
-    %     idx = 63 % for test
-
-    idx;
-    sym_i = symList(idx) ;
-    openpriceSym_i  = openpriceTT(:,idx).Variables ;
-    highpriceSym_i  = highpriceTT(:,idx).Variables ;
-    lowpriceSym_i   = lowpriceTT(:,idx).Variables ;
-    closepriceSym_i = closepriceTT(:,idx).Variables ; 
-    volumeSym_i     = volumeTT(:,idx).Variables ;
+    % indexIHSGTT change to numeric
+    indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "previous");
+    indexIHSGTT.Variables = fillmissing(indexIHSGTT.Variables, "next");
+    indexIHSGTT.Variables = double(indexIHSGTT.Variables);
     
-    % convert to string
-    openpriceSym_i  = string(openpriceSym_i) ;
-    highpriceSym_i  = string(highpriceSym_i) ;
-    lowpriceSym_i   = string(lowpriceSym_i) ;
-    closepriceSym_i = string(closepriceSym_i) ;
-    volumeSym_i     = string(volumeSym_i) ;
+    % preallocate
+    nrows = length(openPriceTT.Time) ;
+    TT1 = timetable(openPriceTT.Time, zeros(nrows,1)) ;
+    TT = repmat(TT1,1,nSym) ; % Prealltocation
     
-    %  convert string to double 
-    openpriceSym_i  = str2double(openpriceSym_i) ;
-    highpriceSym_i  = str2double(highpriceSym_i) ;
-    lowpriceSym_i   = str2double(lowpriceSym_i) ;
-    closepriceSym_i = str2double(closepriceSym_i) ;
-    volumeSym_i     = str2double(volumeSym_i) ;
+    % Preallocate openprice
+    openPriceNumerTT = TT ;
+    openPriceNumerTT.Properties.VariableNames = strcat(symList,"_open") ;
     
-    % put back the clean data into timetable
-    openpriceNumerTT(:,idx).Variables    = openpriceSym_i  ;
-    highpriceNumerTT(:,idx).Variables    = highpriceSym_i   ;
-    lowpriceNumerTT(:,idx).Variables     = lowpriceSym_i  ;
-    closepriceNumerTT(:,idx).Variables   = closepriceSym_i ; 
-    volumeNumerTT(:,idx).Variables       = volumeSym_i ;
+    % Preallocate highprice
+    highPriceNumerTT = TT ;
+    highPriceNumerTT.Properties.VariableNames = strcat(symList,"_high") ;
     
-end
+    % Preallocate lowprice
+    lowPriceNumerTT = TT ;
+    lowPriceNumerTT.Properties.VariableNames = strcat(symList,"_low") ;
+    
+    % Preallocate closeprice
+    closePriceNumerTT = TT ;
+    closePriceNumerTT.Properties.VariableNames = strcat(symList,"_close") ;
+    
+    % Preallocate volume
+    volumeNumerTT = TT ;
+    volumeNumerTT.Properties.VariableNames = strcat(symList,"_volume") ;
+    
+        %% transfer variables per symbol
+        for idx = 1:nSym
+        %     idx = 63 % for test
+    
+            idx;
+            sym_i = symList(idx) ;
+            openpriceSym_i  = openPriceTT(:,idx).Variables ;
+            highpriceSym_i  = highPriceTT(:,idx).Variables ;
+            lowpriceSym_i   = lowPriceTT(:,idx).Variables ;
+            closepriceSym_i = closePriceTT(:,idx).Variables ; 
+            volumeSym_i     = volumeTT(:,idx).Variables ;
+            
+            % convert to string
+            openpriceSym_i  = string(openpriceSym_i) ;
+            highpriceSym_i  = string(highpriceSym_i) ;
+            lowpriceSym_i   = string(lowpriceSym_i) ;
+            closepriceSym_i = string(closepriceSym_i) ;
+            volumeSym_i     = string(volumeSym_i) ;
+            
+            %  convert string to double 
+            openpriceSym_i  = str2double(openpriceSym_i) ;
+            highpriceSym_i  = str2double(highpriceSym_i) ;
+            lowpriceSym_i   = str2double(lowpriceSym_i) ;
+            closepriceSym_i = str2double(closepriceSym_i) ;
+            volumeSym_i     = str2double(volumeSym_i) ;
+            
+            % put back the clean data into timetable
+            openPriceNumerTT(:,idx).Variables    = openpriceSym_i  ;
+            highPriceNumerTT(:,idx).Variables    = highpriceSym_i   ;
+            lowPriceNumerTT(:,idx).Variables     = lowpriceSym_i  ;
+            closePriceNumerTT(:,idx).Variables   = closepriceSym_i ; 
+            volumeNumerTT(:,idx).Variables       = volumeSym_i ;
+        
+        end
+
+        priceVolumeNumerStruct.openPrice = openPriceNumerTT;
+        priceVolumeNumerStruct.highPrice  = highPriceNumerTT;
+        priceVolumeNumerStruct.lowPrice  = lowPriceNumerTT;
+        priceVolumeNumerStruct.closePrice  = closePriceNumerTT;
+        priceVolumeNumerStruct.volume = volumeNumerTT;
+         
+        clearvars -except priceVolumeNumerStruct indexIHSGTT
 end
 
 %% cleanPriceChangeLimitFcn
-function [openpriceCleanTT, highpriceCleanTT, lowpriceCleanTT,...
-    closepriceCleanTT, volumeCleanTT] = cleanPriceChangeLimitFcn(...
-    closepriceFilledTT, openpriceFilledTT, highpriceFilledTT,...
-    lowpriceFilledTT, volumepriceFilledTT)
-%% Identify daily ret crossing the arb and ara limit
+
+function [openPriceCleanTT, highPriceCleanTT, lowPriceCleanTT,...
+    closePriceCleanTT, volumeCleanTT] = cleanPriceChangeLimitFcn(...
+    priceVolumeStruct)
+
+% data preparation
+openpriceFilledTT = priceVolumeStruct.openPrice;
+highpriceFilledTT = priceVolumeStruct.highPrice;
+lowpriceFilledTT = priceVolumeStruct.lowPrice;
+closepriceFilledTT = priceVolumeStruct.closePrice;
+volumeFilledTT = priceVolumeStruct.volume;
+
+% Identify daily ret crossing the arb and ara limit
 closepriceretTT = tick2ret (closepriceFilledTT) ;
 closepriceret = closepriceretTT.Variables ;
 sym = closepriceretTT.Properties.VariableNames ;
@@ -211,32 +310,34 @@ nsymCrossLimit = numel(symCrossLimit) ;
 
 %% Remove data column containing priceretlimit ARA & ARB error 
 % open price
-openpriceCleanTT = openpriceFilledTT ;
-openpriceClean = openpriceCleanTT.Variables ;
-openpriceClean(:,crosslimitposition) = nan;
-openpriceCleanTT.Variables = openpriceClean ;
+openPriceCleanTT = openpriceFilledTT ;
+openPriceClean = openPriceCleanTT.Variables ;
+openPriceClean(:,crosslimitposition) = nan;
+openPriceCleanTT.Variables = openPriceClean ;
 
 % high price
-highpriceCleanTT = highpriceFilledTT ;
-highpriceClean = highpriceCleanTT.Variables ;
-highpriceClean(:,crosslimitposition) = nan ;
-highpriceCleanTT.Variables = highpriceClean ;
+highPriceCleanTT = highpriceFilledTT ;
+highPriceClean = highPriceCleanTT.Variables ;
+highPriceClean(:,crosslimitposition) = nan ;
+highPriceCleanTT.Variables = highPriceClean ;
 
 % low price
-lowpriceCleanTT = lowpriceFilledTT ;
-lowpriceClean = lowpriceCleanTT.Variables ;
-lowpriceClean(:,crosslimitposition) = nan ;
-lowpriceCleanTT.Variables = lowpriceClean ;
+lowPriceCleanTT = lowpriceFilledTT ;
+lowPriceClean = lowPriceCleanTT.Variables ;
+lowPriceClean(:,crosslimitposition) = nan ;
+lowPriceCleanTT.Variables = lowPriceClean ;
 
 % close price
-closepriceCleanTT = closepriceFilledTT ;
-closepriceClean = closepriceCleanTT.Variables ;
-closepriceClean(:,crosslimitposition) = nan ;
-closepriceCleanTT.Variables = closepriceClean ;
+closePriceCleanTT = closepriceFilledTT ;
+closePriceClean = closePriceCleanTT.Variables ;
+closePriceClean(:,crosslimitposition) = nan ;
+closePriceCleanTT.Variables = closePriceClean ;
 
 % volume price
-volumeCleanTT = volumepriceFilledTT ;
+volumeCleanTT = volumeFilledTT ;
 volumeClean = volumeCleanTT.Variables ;
 volumeClean(:,crosslimitposition) = nan ;
 volumeCleanTT.Variables = volumeClean ;
+
+
 end

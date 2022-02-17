@@ -37,22 +37,25 @@ classdef MarketData
         maxRetry = 3;
         
         % SpreadsheetDataLoadSetUp
-        spreadhseetData_filename = "DataInput\PriceVolumeInput.xlsx"
+        spreadhseetData_filename = "PriceVolumeInput.xlsx"
+        spreadhseetData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput"
         spreadhseetData_openPriceSheet = "openPrice"
         spreadhseetData_lowPriceSheet = "lowPrice"
         spreadhseetData_highPriceSheet = "highPrice"
-        spreadhseetData_closePriceSheet = "lowPrice"
+        spreadhseetData_closePriceSheet = "closePrice"
         spreadhseetData_volumeSheet = "volume"
         spreadhseetData_IndexIHSGSheet = "IndexIHSG"
 
         % saveDataSetUp
-        saveData_filename = "DataInput\PriceVolumeInput.xlsx"
+%         saveData_filename = "PriceVolumeInput.xlsx"
+%         saveData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput"
         saveData_openPriceSheet = "openPrice"
         saveData_lowPriceSheet = "lowPrice"
         saveData_highPriceSheet = "highPrice"
         saveData_closePriceSheet= "lowPrice"
         saveData_volumeSheet = "volume"
         saveData_IndexIHSGSheet = "IndexIHSG"
+        
 
     end
 
@@ -77,7 +80,7 @@ classdef MarketData
 
 %------------------------------------------------------------------------
 %% Methods section
-%------------------------------------------------------------------------
+%==========================================================================
     methods
 
         function obj = loadSymbolMCapRef(obj)
@@ -89,9 +92,11 @@ classdef MarketData
 
             obj.symMarketCapRef = readtable(fileName, Sheet=sheetNameSymCap);
             obj.marketCapRangeRef = readtable(fileName, Sheet=sheetNamecaptCategRange);
-            obj.symbols = string(obj.symMarketCapRef.Symbol);           
+            symbols = string(obj.symMarketCapRef.Symbol);
+            obj.symbols = sort(symbols, "ascend");           
         end
 
+%-------------------------------------------------------------------------
         function obj = loadDataFromYahoo(obj)
             %loadDataFromYahoo Summary of this method goes here
 
@@ -105,13 +110,22 @@ classdef MarketData
             obj.closePrice = priceVolumeData.closePrice;
             obj.volume = priceVolumeData.volume;
             obj.indexIHSG = priceVolumeData.indexIHSG;
+            
         end
-        
+
+%-------------------------------------------------------------------------        
         function obj = loadDataFromSpreadsheet(obj)
             %loadDataFromSpreadsheet Summary of this method goes here
 
             % transfer filename and sheetname
-            fileName = obj.spreadhseetData_filename; 
+
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            fileName = "PriceVolumeInput.xlsx";            
+
+            % fileName = obj.spreadhseetData_filename; 
+            % path = obj.spreadhseetData_path;
+            fullFileName = fullfile(path, fileName);
+
             openPriceSheet = obj.spreadhseetData_openPriceSheet; 
             lowPriceSheet = obj.spreadhseetData_lowPriceSheet; 
             highPriceSheet = obj.spreadhseetData_highPriceSheet;
@@ -120,15 +134,34 @@ classdef MarketData
             indexIHSGSheet = obj.spreadhseetData_IndexIHSGSheet; 
             
             % read table for each price and volume data
-            obj.openPrice = readtable(fileName, "Sheet", openPriceSheet);
-            obj.highPrice = readtable(fileName, "Sheet", highPriceSheet);
-            obj.lowPrice = readtable(fileName, "Sheet", lowPriceSheet);
-            obj.closePrice = readtable(fileName, "Sheet", closePriceSheet);
-            obj.volume = readtable(fileName, "Sheet", volumeSheet);
-            obj.indexIHSG = readtable(fileName, "Sheet", indexIHSGSheet);
+            obj.openPrice = readtimetable(fullFileName, "Sheet", openPriceSheet);
+            obj.highPrice = readtimetable(fullFileName, "Sheet", highPriceSheet);
+            obj.lowPrice = readtimetable(fullFileName, "Sheet", lowPriceSheet);
+            obj.closePrice = readtimetable(fullFileName, "Sheet", closePriceSheet);
+            obj.volume = readtimetable(fullFileName, "Sheet", volumeSheet);
+            obj.indexIHSG = readtimetable(fullFileName, "Sheet", indexIHSGSheet);
 
         end
 
+%-------------------------------------------------------------------------
+        function obj = loadDataFromMatFile(obj)
+           % transfer filename and sheetname
+
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            fileName = "PriceVolumeInput.mat";    
+            fullFileName = fullfile(path, fileName);
+
+            priceVolume = load(fullFileName);
+            obj.openPrice = priceVolume.openPrice;
+            obj.highPrice = priceVolume.highPrice;
+            obj.lowPrice = priceVolume.lowPrice;
+            obj.closePrice = priceVolume.closePrice;
+            obj.volume = priceVolume.volume;
+            obj.indexIHSG = priceVolume.indexIHSG;
+
+        end
+
+%-------------------------------------------------------------------------
         function obj = cleanData(obj)
             %cleanData Summary of this method goes here
             %TODO
@@ -138,8 +171,9 @@ classdef MarketData
             priceVolumeRaw.closePrice = obj.closePrice;
             priceVolumeRaw.volume = obj.volume;
             priceVolumeRaw.indexIHSG = obj.indexIHSG;
+            symbols = obj.symbols;
             
-            priceVolumeClean = cleanDataFcn(priceVolumeRaw);
+            priceVolumeClean = cleanDataFcn(priceVolumeRaw, symbols);
             
             obj.openPrice = priceVolumeClean.openPrice;
             obj.highPrice = priceVolumeClean.highPrice;
@@ -157,20 +191,46 @@ classdef MarketData
             obj.marketCapCategory = marketCapCategory;
 
         end
+        
+%-------------------------------------------------------------------------
+    
+        function saveDataToMatFile (obj)
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            fileName = "PriceVolumeInput.mat";
+            fullFileName = fullfile(path, fileName);
 
-        function obj = saveDataToSpreadsheet(obj)
+            openPrice = obj.openPrice;
+            highPrice = obj.highPrice;
+            lowPrice = obj.lowPrice;
+            closePrice = obj.closePrice;
+            volume = obj.volume;
+            indexIHSG = obj.indexIHSG;
+
+        save(fullFileName, "openPrice", "highPrice", "lowPrice", "closePrice", "volume")
+
+
+        end
+
+%-------------------------------------------------------------------------
+        function saveDataToSpreadsheet(obj)
             %saveDataToSpreadsheet Summary of this method goes here
-            
-            % write timetable for each price and volume data
-            writetimetable(obj.openPrice, "DataInput\PriceVolumeInput.xlsx", "Sheet", "openPrice");
-            writetimetable(obj.highPrice, "DataInput\PriceVolumeInput.xlsx", "Sheet", "highPrice");
-            writetimetable(obj.lowPrice, "DataInput\PriceVolumeInput.xlsx", "Sheet", "lowPrice");
-            writetimetable(obj.closePrice, "DataInput\PriceVolumeInput.xlsx", "Sheet", "closePrice");
-            writetimetable(obj.volume, "DataInput\PriceVolumeInput.xlsx", "Sheet", "volume");
-            writetimetable(obj.indexIHSG, "DataInput\PriceVolumeInput.xlsx", "Sheet", "indexIHSG");
 
-        end    
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            fileName = "PriceVolumeInput.xlsx";            
+            fullFileName = fullfile(path, fileName);
+
+            % write timetable for each price and volume data
+            writetimetable(obj.openPrice, fullFileName, 'Sheet', 'openPrice');
+            writetimetable(obj.highPrice, fullFileName, "Sheet", "highPrice");
+            writetimetable(obj.lowPrice, fullFileName, "Sheet", "lowPrice");
+            writetimetable(obj.closePrice, fullFileName, "Sheet", "closePrice");
+            writetimetable(obj.volume, fullFileName, "Sheet", "volume");
+            writetimetable(obj.indexIHSG, fullFileName, "Sheet", "indexIHSG");
+
+        end   
+
     end
+
 end
 %==========================================================================
 %% Helper functions
