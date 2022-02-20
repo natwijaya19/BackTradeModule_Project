@@ -1,4 +1,4 @@
-classdef TestBacktestStrategy < matlab.mixin.Heterogeneous
+classdef Test_BacktestStrategy < matlab.mixin.Heterogeneous
     %BACKTESTSTRATEGY Strategy for portfolio backtesting.
     %
     % Syntax:
@@ -200,7 +200,7 @@ classdef TestBacktestStrategy < matlab.mixin.Heterogeneous
     end
     
     methods
-        function obj = TestBacktestStrategy(name, rebalanceFcn, varargin)
+        function obj = Test_BacktestStrategy(name, rebalanceFcn, varargin)
             
             if nargin < 1
                 name = "DefaultStrategy";
