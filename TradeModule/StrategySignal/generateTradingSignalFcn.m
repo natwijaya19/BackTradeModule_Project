@@ -21,7 +21,6 @@ function tradingSignalOut = generateTradingSignalFcn (dataInput, tradingSignalPa
     % liquidityMomentumSignalBuffer 
     % cutLossHighToCloseNDayLookback 
     % cutLossHighToCloseMaxPct 
-    % nDayBackShift 
 
 % preparation 
 %======================================================================================
@@ -62,7 +61,7 @@ volume = dataInput.volume;
 %                             1        % nDayBackShift = paramInput(16);
 %                                 ] ;  % close the array
 %---------------------------------------------------------------------------
-% parameter preparation
+%% parameter preparation
 paramInput = tradingSignalParameter; % param array transfer
 
 liquidityVolumeMALookback = paramInput(1);
@@ -80,12 +79,14 @@ momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
 liquidityMomentumSignalBuffer = paramInput(13);
 cutLossHighToCloseNDayLookback = paramInput(14);
 cutLossHighToCloseMaxPct = paramInput(15) / 100;
-nDayBackShift = paramInput(16);
+
+% nDayBackShift to avoid forward-looking bias.
+nDayBackShift = 1;
 
 %-----------------------------------------------------------------------------------------
 
 
-% argument validation
+%% argument validation
 %TODO remove the %
 
 %arguments
@@ -266,7 +267,7 @@ tradingSignalOut.Properties.VariableNames = symbols;
 clear symbols
 %------------------------------------------------------------------------------------------
 
-%check tradingSignalOut
+%% check tradingSignalOut
 a = sum(FinalSignal,2);
 b = max(a);
 c = sum(a);
@@ -274,4 +275,5 @@ c = sum(a);
 clearvars -except tradingSignalOut
 
 % end of of function
+
 end
