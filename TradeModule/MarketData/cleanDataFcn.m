@@ -105,7 +105,7 @@ function [priceVolumeFilledStruct] = fillMissingFcn(...
     closePrice = priceVolumeStruct.closePrice;
     volume = priceVolumeStruct.volume;
 
-    % convert all variables into numeric via this stage:
+    % DO NOT Delete: convert all variables into numeric via this stage:
     % - let say A is raw data  
     % - convert to string B = string(A)
     % - convert to double C = double (B)
