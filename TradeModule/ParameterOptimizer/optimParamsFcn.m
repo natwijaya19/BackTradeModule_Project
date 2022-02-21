@@ -49,7 +49,6 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
                                 1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
                                 0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
                                 0,  500             % cutLossHighToCloseMaxPct = paramInput(15);
-                                1,  UBLookback        % nDayBackShift = paramInput(16);
                                                 ] ;  % close the array
 
     %% define function handle of objectiveFcn and nonLinearConstraintFcn

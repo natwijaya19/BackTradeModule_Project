@@ -8,10 +8,12 @@ function tradingSignalOut = generateTradingSignalFcn (dataInput, tradingSignalPa
 %     
     % dataInput struct - consist of openPrice, highPrice, lowPrice,
     %                       closePrice, volume.
-    % liquidityVolumeMALookback 
-    % liquidityVolumeMAThreshold 
-    % liquidityValueMALookback 
-    % liquidityValueeMAThreshold 
+    % liquidityVolumeMALookback
+    % liquidityVolumeMAThreshold
+    % liquidityVolumeMANDayBuffer 
+    % liquidityValueMALookback  
+    % liquidityValueMAThreshold  
+    % liquidityValueMANDayBuffer 
     % liquidityNDayVolumeValueBuffer 
     % momentumPriceMALookback 
     % momentumPriceMAToCloseThreshold 
@@ -111,6 +113,7 @@ liquidityVolumeMALookback;
 liquidityVolumeMAThreshold;
 liquidityVolumeMANDayBuffer;
 volumeMA = movmean(volume.Variables, [liquidityValueMALookback, 0], 1);
+volumeMA(isnan(volumeMA)) = 0;
 signalVolumeMA = volumeMA > liquidityVolumeMAThreshold;
 signalVolumeMABuffer = movmax(signalVolumeMA, [liquidityVolumeMANDayBuffer , 0], 1);
 
@@ -129,6 +132,7 @@ liquidityValueMANDayBuffer ;
 
 valueVar = volume.Variables .* closePrice.Variables;
 valueMA = movmean(valueVar, [liquidityValueMALookback, 0], 1);
+valueMA(isnan(valueMA)) = 0;
 SignalvalueMA = valueMA > liquidityValueMAThreshold;
 SignalvalueMABuffer =  movmax(SignalvalueMA, [liquidityValueMANDayBuffer, 0], 1);
 
@@ -160,6 +164,7 @@ a = sum(signalVolumeValueBuffer,2);
 momentumPriceMALookback;
 momentumPriceMAToCloseThreshold;
 closePriceMA = movmean(closePrice.Variables, [momentumPriceMALookback, 0], 1);
+closePriceMA(isnan(closePriceMA)) = 0;
 signalClosePriceMA =  closePrice.Variables > closePriceMA;
 
 clear closePriceMA
@@ -177,8 +182,9 @@ momentumPriceRetLowToCloseThreshold ;
 momentumPriceRetLowToCloseNDayBuffer ;
 
 lowPriceShifted = backShiftFcn(lowPrice.Variables, momentumPriceRetLowToCloseLookback) ;
-lowToClosePriceRet = (lowPriceShifted ./ closePrice.Variables)-1 ;
+lowToClosePriceRet = (closePrice.Variables ./ lowPriceShifted  )-1 ;
 lowToClosePriceRet(1:momentumPriceRetLowToCloseLookback,:) = 0 ;
+lowToClosePriceRet(isnan(lowToClosePriceRet)) = 0;
 
 signalLowToClose = lowToClosePriceRet > momentumPriceRetLowToCloseThreshold;
 signalLowToCloseNDayBuffer = movmax(signalLowToClose,...
@@ -215,6 +221,7 @@ cutLossHighToCloseMaxPct ;
 
 lastHighPrice = movmax(highPrice.Variables, [cutLossHighToCloseNDayLookback, 0], 1);
 lastHighToLastClosePriceRet = (closePrice.Variables ./ lastHighPrice) - 1;
+lastHighToLastClosePriceRet(isnan(lastHighToLastClosePriceRet)) = 0;
 cutLossSignal = lastHighToLastClosePriceRet > (-cutLossHighToCloseMaxPct) ;
 
 clear lastHighPrice lastHighToLastClosePriceRet
