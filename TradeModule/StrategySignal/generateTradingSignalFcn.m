@@ -67,20 +67,20 @@ volume = dataInput.volume;
 paramInput = tradingSignalParameter; % param array transfer
 
 liquidityVolumeMALookback = paramInput(1);
-liquidityVolumeMAThreshold = paramInput(2) / 100;
+liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
 liquidityVolumeMANDayBuffer = paramInput(3); 
 liquidityValueMALookback  = paramInput(4);
-liquidityValueMAThreshold  = paramInput(5) / 100;
+liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million 
 liquidityValueMANDayBuffer = paramInput(6);
 liquidityNDayVolumeValueBuffer = paramInput(7);
 momentumPriceMALookback = paramInput(8);
-momentumPriceMAToCloseThreshold = paramInput(9) / 100;
+momentumPriceMAToCloseThreshold = paramInput(9) / 100; % in percentage
 momentumPriceRetLowToCloseLookback = paramInput(10);
-momentumPriceRetLowToCloseThreshold = paramInput(11) / 100;
+momentumPriceRetLowToCloseThreshold = paramInput(11) / 100; % in percentage
 momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
 liquidityMomentumSignalBuffer = paramInput(13);
 cutLossHighToCloseNDayLookback = paramInput(14);
-cutLossHighToCloseMaxPct = paramInput(15) / 100;
+cutLossHighToCloseMaxPct = paramInput(15) / 100; % in percentage
 
 % nDayBackShift to avoid forward-looking bias.
 nDayBackShift = 1;

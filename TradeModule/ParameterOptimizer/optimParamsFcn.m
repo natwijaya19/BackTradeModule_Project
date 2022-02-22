@@ -1,7 +1,6 @@
-% optimize the parameter
 function optimStructOut = optimParamsFcn (dataStructInput,...
               optimLookbackStep, tradingCost, maxCapAllocation,...
-          maxDDThreshold, minPortfolioReturn, minDailyRetThreshold, maxFcnEval)
+          maxDDThreshold, minPortfolioReturn, minDailyRetThreshold, LBUBConst, maxFcnEval)
 
     % optimParamsFcn - function for parameter optimization
     % USAGE:
@@ -19,7 +18,7 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
     % 
     % N = pool.NumWorkers
     useParallel = false;
-    %% sample input args
+    % sample input args
     % optimizedParameter
     % backtest the signal
     % dataStructInput = dataInput;
@@ -32,24 +31,24 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
     % maxFcnEval = 24;
 
     %% LB UB Constraints
-    UBLookback = 250;
-    LBUBConst = [                                     % open the array
-                                1,  UBLookback;        % liquidityVolumeMALookback = paramInput(1);
-                                0,  500;               % liquidityVolumeMAThreshold = paramInput(2);
-                                1,  UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(3) 
-                                1,  UBLookback;        % liquidityValueMALookback  = paramInput(4);
-                                0,  500;              % liquidityValueeMAThreshold  = paramInput(5);
-                                1,  UBLookback;        %liquidityValueMANDayBuffer = paramInput(6)
-                                1,  UBLookback        % liquidityNDayVolumeValueBuffer = paramInput(7);
-                                1,  UBLookback     % momentumPriceMALookback = paramInput(8);
-                                0,  500            % momentumPriceMAToCloseThreshold = paramInput(9);
-                                1,  UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(10);
-                                0,  500             % momentumPriceRetLowToCloseThreshold = paramInput(11);
-                                1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-                                1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
-                                0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
-                                0,  500             % cutLossHighToCloseMaxPct = paramInput(15);
-                                                ] ;  % close the array
+%     UBLookback = 250;
+%     LBUBConst = [                                     % open the array
+%                                 1,  UBLookback;        % liquidityVolumeMALookback = paramInput(1);
+%                                 0,  500;               % liquidityVolumeMAThreshold = paramInput(2);
+%                                 1,  UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(3) 
+%                                 1,  UBLookback;        % liquidityValueMALookback  = paramInput(4);
+%                                 0,  500;              % liquidityValueeMAThreshold  = paramInput(5);
+%                                 1,  UBLookback;        %liquidityValueMANDayBuffer = paramInput(6)
+%                                 1,  UBLookback        % liquidityNDayVolumeValueBuffer = paramInput(7);
+%                                 1,  UBLookback     % momentumPriceMALookback = paramInput(8);
+%                                 0,  500            % momentumPriceMAToCloseThreshold = paramInput(9);
+%                                 1,  UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(10);
+%                                 0,  500             % momentumPriceRetLowToCloseThreshold = paramInput(11);
+%                                 1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
+%                                 1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
+%                                 0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
+%                                 0,  500             % cutLossHighToCloseMaxPct = paramInput(15);
+%                                                 ] ;  % close the array
 
     %% define function handle of objectiveFcn and nonLinearConstraintFcn
 
@@ -70,14 +69,17 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
 
     %% setup optimization options
     options = optimoptions('surrogateopt','PlotFcn',"surrogateoptplot", ...
-        "ConstraintTolerance",1e-4, "MaxFunctionEvaluations",maxFcnEval, ...
+        "ConstraintTolerance",1e-2,...
         "UseParallel", useParallel, "UseVectorized",true);
+
+    % options template in case needed    
+    %"MaxFunctionEvaluations",maxFcnEval
 
     %% call surrogateopt to solve the problem
     [sol,fval,exitflag,output] = surrogateopt(F,LB,UB,intConst,options) ;
 
     %% put UB into tradingSignalParam if FVal < minPortfolioReturn
-    if fval < -(1+minPortfolioReturn) 
+    if fval <= -(1+minPortfolioReturn) 
         optimizedTradingSignalParam = sol ;
         else
         optimizedTradingSignalParam = UB ;
