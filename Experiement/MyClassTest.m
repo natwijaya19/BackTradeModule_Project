@@ -1,31 +1,24 @@
 classdef MyClassTest
+    %UNTITLED6 Summary of this class goes here
+    %   Detailed explanation goes here
+    
     properties
-        prop1  = 100
-        prop2  = "Hi"
-        prop3 
-        prop4 
-
+        Property1
+        Property2 = 10
     end
-
-    methods 
-        function obj = MyClassTest(prop1, prop2, varargin)
-            if nargin <3
-                obj.prop1 = 100;
-                obj.prop2 = "Hello";
-            end
-            obj.prop1 = prop1;
-            obj.prop2 = prop2;
-
-            ip = inputParser;
-            ip.addParameter('prop3',10);
-            ip.addParameter('prop4','abcd')
-            
-            ip.parse(varargin{:});
-            result = ip.Results;
-
-            obj.prop3 = result.prop3;
-            obj.prop4 = result.prop4;
-
+    
+    methods
+%         function obj = untitled6(inputArg1,inputArg2)
+%             %UNTITLED6 Construct an instance of this class
+%             %   Detailed explanation goes here
+%             obj.Property1 = inputArg1 + inputArg2;
+%         end
+        
+        function obj = method1(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.Property1 = [obj.Property2, 2];
         end
     end
 end
+
