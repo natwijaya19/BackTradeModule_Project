@@ -34,7 +34,7 @@ classdef WFASetUpParam
         function obj = prepare(obj)
         UBLookback = obj.lookbackUB;
         
-        obj.lbubConst = [                   % open the array
+        obj.lbubConst = [            % open the array
             1,  UBLookback;        % liquidityVolumeMALookback = paramInput(1);
             0,  10^6;               % liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
             1,  UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(3) 
@@ -45,11 +45,11 @@ classdef WFASetUpParam
             1,  UBLookback     % momentumPriceMALookback = paramInput(8);
             0,  500            % momentumPriceMAToCloseThreshold = paramInput(9); % in percentage
             1,  UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(10);
-            0,  500             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
+            0,  200             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
             1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
             1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
             0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
-            0,  500             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
+            0,  10             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
             ] ;                 % close the array
 
         
