@@ -28,7 +28,8 @@ classdef MarketData
 %------------------------------------------------------------------------
     properties
         % YahooDataLoadSetUp
-        yahooData_fileName = "DataInput\Symbols_MarketCap_MarketCapCategoryRange.xlsx"
+        yahooData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
+        yahooData_fileName = "Symbols_MarketCap_MarketCapCategoryRange.xlsx";
         yahooData_symMktCapSheetName = "SymbolsMarketCapReference"
         yahooData_mktCapCategRangeSheet = "MarketCap_Category_Range"
         startDate = datetime("1-Jan-2014")
@@ -38,7 +39,7 @@ classdef MarketData
         
         % SpreadsheetDataLoadSetUp
         spreadhseetData_filename = "PriceVolumeInput.xlsx"
-        spreadhseetData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput"
+        spreadhseetData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput"
         spreadhseetData_openPriceSheet = "openPrice"
         spreadhseetData_lowPriceSheet = "lowPrice"
         spreadhseetData_highPriceSheet = "highPrice"
@@ -119,7 +120,7 @@ classdef MarketData
 
             % transfer filename and sheetname
 
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
             fileName = "PriceVolumeInput.xlsx";            
 
             % fileName = obj.spreadhseetData_filename; 
@@ -147,7 +148,7 @@ classdef MarketData
         function obj = loadDataFromMatFile(obj)
            % transfer filename and sheetname
 
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
             fileName = "PriceVolumeInput.mat";    
             fullFileName = fullfile(path, fileName);
 
@@ -194,7 +195,7 @@ classdef MarketData
 %-------------------------------------------------------------------------
     
         function saveDataToMatFile (obj)
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
             fileName = "PriceVolumeInput.mat";
             fullFileName = fullfile(path, fileName);
 
@@ -214,7 +215,7 @@ classdef MarketData
         function saveDataToSpreadsheet(obj)
             %saveDataToSpreadsheet Summary of this method goes here
 
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput";
+            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
             fileName = "PriceVolumeInput.xlsx";            
             fullFileName = fullfile(path, fileName);
 
@@ -244,7 +245,7 @@ function marketCap = calculateMarketCapFcn (inputArgs)
     timeCol = marketData.volume.Time;
     varType = repmat(["double"], 1,numel(symbols));
     marketCap = timetable('Size', [numel(timeCol), numel(symbols)],...
-        'VariableTypes', varType , 'RowTimes', timeCol, VariableNames=symbols);
+        'VariableTypes', varType , 'RowTimes', timeCol, 'VariableNames', symbols);
     
     for symIdx = 1:numel(symbols)
     
@@ -273,7 +274,7 @@ function marketCapCategory = calcMktCapCategoryFcn(inputArg)
     timeCol = marketData.volume.Time;
     varType = repmat(["string"], 1,numel(symbols));
     marketCapCategory  = timetable('Size', [numel(timeCol), numel(symbols)],...
-        'VariableTypes', varType ,'RowTimes', timeCol, VariableNames=symbols);
+        'VariableTypes', varType ,'RowTimes', timeCol, 'VariableNames', symbols);
     marketCapRangeRef = sortrows(marketData.marketCapRangeRef, "UB","ascend"); 
     UB = marketCapRangeRef.UB;
     edges = sort([UB(:); 0 ],"ascend");
