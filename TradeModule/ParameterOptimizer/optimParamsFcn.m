@@ -11,13 +11,13 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
     % 
     % x
     % paralel pool
-    % pool = gcp('nocreate'); % Check whether a parallel pool exists
-    % if isempty(pool) % If not, create one
-    %     pool = parpool;
-    % end
-    % 
-    % N = pool.NumWorkers
-    useParallel = false;
+    pool = gcp('nocreate'); % Check whether a parallel pool exists
+    if isempty(pool) % If not, create one
+        pool = parpool;
+    end
+    
+    N = pool.NumWorkers;
+    useParallel = true;
     % sample input args
     % optimizedParameter
     % backtest the signal
@@ -79,7 +79,7 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
     [sol,fval,exitflag,output] = surrogateopt(F,LB,UB,intConst,options) ;
 
     %% put UB into tradingSignalParam if FVal < minPortfolioReturn
-    if fval <= -(1+minPortfolioReturn) 
+    if fval <= -(minPortfolioReturn) 
         optimizedTradingSignalParam = sol ;
         else
         optimizedTradingSignalParam = UB ;

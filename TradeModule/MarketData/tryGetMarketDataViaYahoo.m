@@ -6,10 +6,9 @@ function datai = tryGetMarketDataViaYahoo(symi,...
 % variable type double.
 
     for reTryCount = 1:maxRetry
-        reTryCount;
 
         if reTryCount == maxRetry
-            reTryCount
+            disp(reTryCount);
 
         end
 
