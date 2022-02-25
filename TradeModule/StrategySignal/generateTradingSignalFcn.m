@@ -1,4 +1,4 @@
-function tradingSignalOut = generateTradingSignalFcn (dataInput, tradingSignalParameter)
+function tradingSignalTTOut = generateTradingSignalFcn (dataInput, tradingSignalParameter)
 %generateTradingSignalFcn to generate signal for trading strategy
 %
 % USAGE:
@@ -81,9 +81,7 @@ momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
 liquidityMomentumSignalBuffer = paramInput(13);
 cutLossHighToCloseNDayLookback = paramInput(14);
 cutLossHighToCloseMaxPct = paramInput(15) / 100; % in percentage
-
-% nDayBackShift to avoid forward-looking bias.
-nDayBackShift = 1;
+nDayBackShift = paramInput(16) ;
 
 %-----------------------------------------------------------------------------------------
 
@@ -153,10 +151,10 @@ signalVolumeValueBuffer = movmax(signalVolumeValue, [liquidityNDayVolumeValueBuf
 
 clear signalVolumeValue
 
-%check
-a = sum(signalVolumeValueBuffer,2);
-% b = max(a)
-% c = sum(a)
+% %check
+% a = sum(signalVolumeValueBuffer,2);
+% % b = max(a)
+% % c = sum(a)
 %-----------------------------------------------------------------------------------------
 
 
@@ -265,21 +263,21 @@ FinalSignal(1:warmUpPeriodMax,:) = 0;
 %------------------------------------------------------------------------------------------
 
 %% final tradingSignalOut
-tradingSignalOut = openPrice;
-tradingSignalOut.Variables = FinalSignal;
-symbols = tradingSignalOut.Properties.VariableNames;
+tradingSignalTTOut = openPrice;
+tradingSignalTTOut.Variables = FinalSignal;
+symbols = tradingSignalTTOut.Properties.VariableNames;
 symbols = strrep(symbols,"_open", "");
-tradingSignalOut.Properties.VariableNames = symbols;
+tradingSignalTTOut.Properties.VariableNames = symbols;
 
 clear symbols
 %------------------------------------------------------------------------------------------
 
 %% check tradingSignalOut
-a = sum(FinalSignal,2);
-b = max(a);
-c = sum(a);
+% a = sum(FinalSignal,2);
+% b = max(a);
+% c = sum(a);
 
-clearvars -except tradingSignalOut
+clearvars -except tradingSignalTTOut
 
 % end of of function
 

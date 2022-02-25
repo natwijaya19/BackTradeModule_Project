@@ -50,13 +50,15 @@ mCapValueNSym = closePrice(:,1:6);
 mCapValueNSymVar = mCapValueNSym.Variables;
 mCapValueNSymVar(:,:) = 0;
 mCapValueNSym.Properties.VariableNames = mCap;
+tiledLO = tiledlayout(3,2)
+tiledLO.TileSpacing = "compact";
 for mCapIdx = 1:numel(mCap)
     
     mCapValid = marketCapCategoryVar==mCap(mCapIdx);
     mCapValue = mCapValid .* valuegtThreshold.Variables;
     mCapValueNSymVar(:,mCapIdx) = sum(mCapValue,2);
 
-    f1 = figure;
+    nexttile;
     plot(mCapValueNSym.Time, mCapValueNSymVar(:,mCapIdx));
     title(mCap(mCapIdx));
     

@@ -56,9 +56,8 @@ function resultStruct = btEngineVectorizedFcn (dataStructInput, tradingSignal, t
     %------------------------------------------------------------------------
     %data transfer
     %TODO finalize the data transfer
-    dataInputStruct = dataStructInput;
-    openPrice = dataInputStruct.openPrice;
-    closePrice = dataInputStruct.closePrice;
+    openPrice = dataStructInput.openPrice;
+    closePrice = dataStructInput.closePrice;
     
     maxCapAllocPerSym = maxCapAllocation;
     buyCost = tradingCost(1);
@@ -308,7 +307,6 @@ function resultStruct = btEngineVectorizedFcn (dataStructInput, tradingSignal, t
     
     
     %% 
-    % 
     
     clearvars -except resultStruct
 
