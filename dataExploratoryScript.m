@@ -1,5 +1,5 @@
 marketData = MarketData;
-marketData.matFileSetUp.fileName = "DataInput\PriceVolumeInput2010to22.mat";
+marketData.matFileSetUp.fileName = "DataInput\PriceVolumeInput2010to22Raw.mat";
 
 marketData = marketData.loadSymbolMCapRef;
 
