@@ -16,16 +16,16 @@ classdef WFASetUpParam
         % optimization set up
 %         optimLookbackStep = nstepTrain; %TODO lets put this later in the
 %         function
-        maxDDThreshold = -0.20;
-        minPortfolioReturn = 1.10;
+        maxDDThreshold = -0.10;
+        minPortfolioReturn = 1.15;
         minDailyRetThreshold = -0.20;
         maxFcnEval = 300;
-        lbubConst
+        
         
     end
 
     properties (SetAccess = private)
-        
+        lbubConst
         
     end
     
@@ -48,7 +48,7 @@ classdef WFASetUpParam
             0,  200             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
             1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
             1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
-            0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
+            0,  20        % cutLossHighToCloseNDayLookback = paramInput(14);
             0,  10             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
             ] ;                 % close the array
 

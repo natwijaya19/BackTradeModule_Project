@@ -32,7 +32,7 @@ classdef MarketData
         yahooData_fileName = "Symbols_MarketCap_MarketCapCategoryRange.xlsx";
         yahooData_symMktCapSheetName = "SymbolsMarketCapReference"
         yahooData_mktCapCategRangeSheet = "MarketCap_Category_Range"
-        startDate = datetime("1-Jan-2014")
+        startDate = datetime("1-Jan-2010")
         endDate = datetime("today")
         interval = "1d"
         maxRetry = 3;
