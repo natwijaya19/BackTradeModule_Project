@@ -13,7 +13,6 @@ function wfaOptimStructOut = wfaOptimParamFcn(marketData, wfaSetUpParam)
 % - exitflagAtTrainData
 % - wfaSetUpParam
 
-
 %=========================================================================
 %% prepare the input parameters
 % transfer wfaSetUpParam values
@@ -35,9 +34,9 @@ minDailyRetThreshold = wfaSetUpParam.minDailyRetThreshold;
 maxFcnEval = wfaSetUpParam.maxFcnEval;
 lbubConst = wfaSetUpParam.lbubConst;
 
-% nuumber of required nDataRowRequired 
+% number of required nDataRowRequired 
 nstepWalk = nWalk*nstepTest + lookbackUB + nstepTrain;
-additionalData = nstepTrain;
+additionalData = nstepTest; % additional data for safety required data
 nDataRowRequired = nstepWalk+additionalData;
 
 %% prepare data for for WFA
@@ -49,21 +48,20 @@ dataInput.volume = marketData.volume(end-nDataRowRequired+1:end,:);
 dataInput.marketCapCategory = marketData.marketCapCategory(end-nDataRowRequired+1:end,:);
 
 % Number of rows in raw data
-nRowDataAvailable = size (dataInput.closePrice,1) ;
+nRowDataAvailable = size (marketData.openPrice,1) ;
 
 % nRowDataAvailable must be larger than nDataRowRequired
-validIF = nRowDataAvailable >= nDataRowRequired;
+validIF = nRowDataAvailable < nDataRowRequired;
 
-if ~validIF
+if validIF
     error(message('finance:WFA:nRowDataAvailable must be larger than nDataRowRequired'));
 end
-
 
 %% marking idx step for each walk
 % idx for start and end of test steps
 
-nRowDataInput = size(dataInput.openPrice,1);
-lastEndStepTestIdx = nRowDataInput;
+nDataRowRequired = size(dataInput.openPrice,1);
+lastEndStepTestIdx = nDataRowRequired;
 firstEndTestIdx = lastEndStepTestIdx - (nWalk-1)*nstepTest;
 endStepTestIdx = firstEndTestIdx:nstepTest:lastEndStepTestIdx;
 startStepTestIdx = endStepTestIdx - nstepTest +1;
@@ -175,9 +173,13 @@ exitflagAtTrainData = timetable('Size', sz, 'VariableTypes', varTypes,...
 %% do walk-forwad
 nMktCap = numel(uniqueMktCap);
 % optimParam for each walk
-
+msg = "Please wait. Optimizing parameter for walk forward analysis";
+waitbarFig = waitbar(0,msg);
 for walkIdx = 1:nWalk
-    disp(walkIdx)
+    
+    % show wait bar counting the walkIdx
+    waitbar(walkIdx/nWalk, waitbarFig, msg); 
+%     disp(walkIdx)
 
     % setup start and end for loopbackDataset, trainDataset and testDataset
     startLookbackAtWalkIdx = startStepLookbackIdx(walkIdx);
@@ -200,10 +202,7 @@ for walkIdx = 1:nWalk
     dataInputWalkIdx.marketCapCategory = dataInput.marketCapCategory(startIdx:endIdx,:);
 
     % optimparam for each mCap
-    
     for mCapIdx = 1: nMktCap
-%         mCapIdx
-%         display tracker
         if mCapIdx == 6
             disp(mCapIdx)
         end

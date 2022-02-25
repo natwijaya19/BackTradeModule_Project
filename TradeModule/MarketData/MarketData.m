@@ -20,7 +20,7 @@ classdef MarketData
     %   loadSymbolMCapRef
     %   loadDataFromYahoo
     %   loadDataFromSpreadsheet
-    %   cleanData
+    %   cleanMktData
     %   saveDataToSpreadsheet
 
 %------------------------------------------------------------------------
@@ -142,7 +142,7 @@ classdef MarketData
         end
 
 %-------------------------------------------------------------------------
-        function obj = cleanData(obj)
+        function obj = cleanMktData(obj)
             %cleanData Summary of this method goes here
             %TODO
             priceVolumeRaw.openPrice = obj.openPrice;
@@ -247,13 +247,13 @@ end
 
 %---------------------------------------------------------------------------
 %% calcMktCapCategoryFcn
-function marketCapCategory = calcMktCapCategoryFcn(inputArg) 
+function marketCapCategory = calcMktCapCategoryFcn(marketData) 
+
     % calcMktCapCategoryFcn to categorize MktCap
-    marketData = inputArg;
     marketCap = marketData.marketCap;
-    symbols = sort(eraseBetween(string(marketData.volume.Properties.VariableNames),5,11)) ;
+    symbols = sort(strrep(string(marketData.volume.Properties.VariableNames),"_volume","")) ;
     timeCol = marketData.volume.Time;
-    varType = repmat(["string"], 1,numel(symbols));
+    varType = repmat({'string'}, 1,numel(symbols));
     marketCapCategory  = timetable('Size', [numel(timeCol), numel(symbols)],...
         'VariableTypes', varType ,'RowTimes', timeCol, 'VariableNames', symbols);
     marketCapRangeRef = sortrows(marketData.marketCapRangeRef, "UB","ascend"); 

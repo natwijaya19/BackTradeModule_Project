@@ -4,7 +4,7 @@ classdef WFASetUpParam
     
     properties
         % WFA specific set up
-        nWalk = 4 ; % Number of walk for the whole walk forwad
+        nWalk = 2 ; % Number of walk for the whole walk forwad
         lookbackUB = 200; % lookback upper bound
         nstepTrain = 60; % Number of step for training datastasket
         nstepTest = 20; % Number of step for testing dataset

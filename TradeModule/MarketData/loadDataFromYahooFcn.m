@@ -30,6 +30,8 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
     
     TT = timetable('Size', size(sampleData), 'VariableTypes', sampleVariableTypes, 'RowTimes', timeCol,...
         'VariableNames', sampleVarName);
+
+    TT.Variables = nan(nRowSampleData, nColSampleData);
     
     % preallocation for preallocation dataTT in loop. dataTT in created to
     % maintain nSymbols in output and input price volume data
@@ -54,8 +56,11 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
     volumeTT = dataTT;
     
     % looping through all symbol
+    waitbarFig = waitbar(0, "Downloading data from yahoo");
     progressCounter = 1:25:nSymbols;
+    
     for Idx = 1: nSymbols
+        waitbar(Idx/nSymbols, waitbarFig, "Downloading data from yahoo");
         symi = strcat(symbols(Idx), ".JK");
     
         % progressCounter
@@ -63,8 +68,10 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
             disp(strcat(string(Idx)," ", string(symi)))
         end
     
-        dataIdx = tryGetMarketDataViaYahoo(symi, startDate, endDate, interval, maxRetry, TT);
-    
+        dataIdx = tryGetMarketDataViaYahoo(symi, startDate, endDate, interval, maxRetry);
+        if isempty(dataIdx)
+            dataIdx = TT;
+        end
         % Synchronize price and volume data
         openPriceTT = synchronize (openPriceTT, dataIdx(:,1)) ;
         highPriceTT = synchronize (highPriceTT, dataIdx(:,2));
@@ -93,7 +100,10 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
     indexIHSGSymbol = '^JKSE';
     
     indexIHSG = tryGetMarketDataViaYahoo(indexIHSGSymbol, startDate,...
-        endDate, interval, maxRetry, TT);
+        endDate, interval, maxRetry);
+    if isempty(indexIHSG)
+        indexIHSG = TT;
+    end
 
     % replace string .JK from each symbol name with _open, _high, _low, _close
     % and _volume
@@ -129,7 +139,6 @@ function priceVolumeOut = loadDataFromYahooFcn(symbols, startDate, endDate, inte
     
     
 %     clearvars -except priceVolumeOut
-
 
 
 end % of function
