@@ -27,36 +27,14 @@ classdef MarketData
 %% Properties section
 %------------------------------------------------------------------------
     properties
-        % YahooDataLoadSetUp
-        yahooData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
-        yahooData_fileName = "Symbols_MarketCap_MarketCapCategoryRange.xlsx";
-        yahooData_symMktCapSheetName = "SymbolsMarketCapReference"
-        yahooData_mktCapCategRangeSheet = "MarketCap_Category_Range"
-        startDate = datetime("1-Jan-2014")
-        endDate = datetime("today")
-        interval = "1d"
-        maxRetry = 3;
+        % YahooDataSetUp
+        yahooDataSetUp = YahooDataSetUp;
         
-        % SpreadsheetDataLoadSetUp
-        spreadhseetData_filename = "PriceVolumeInput.xlsx"
-        spreadhseetData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput"
-        spreadhseetData_openPriceSheet = "openPrice"
-        spreadhseetData_lowPriceSheet = "lowPrice"
-        spreadhseetData_highPriceSheet = "highPrice"
-        spreadhseetData_closePriceSheet = "closePrice"
-        spreadhseetData_volumeSheet = "volume"
-        spreadhseetData_IndexIHSGSheet = "IndexIHSG"
-
-        % saveDataSetUp
-%         saveData_filename = "PriceVolumeInput.xlsx"
-%         saveData_path = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project\DataInput"
-        saveData_openPriceSheet = "openPrice"
-        saveData_lowPriceSheet = "lowPrice"
-        saveData_highPriceSheet = "highPrice"
-        saveData_closePriceSheet= "lowPrice"
-        saveData_volumeSheet = "volume"
-        saveData_IndexIHSGSheet = "IndexIHSG"
+        % SpreadsheetSetUp
+        spreadSheetSetUp = SpreadSheetSetUp;
         
+        % MatFileSetUp
+        matFileSetUp = MatFileSetUp;
 
     end
 
@@ -87,22 +65,28 @@ classdef MarketData
         function obj = loadSymbolMCapRef(obj)
             %loadSymbolMCapRef Summary of this method goes here
 
-            fileName = obj.yahooData_fileName;
-            sheetNameSymCap = obj.yahooData_symMktCapSheetName;
-            sheetNamecaptCategRange = obj.yahooData_mktCapCategRangeSheet;
+            path = obj.yahooDataSetUp.path; 
+            fileName = obj.yahooDataSetUp.fileName;
+            fullFileName = fullfile(path, fileName);
+            sheetNameSymCap = obj.yahooDataSetUp.symMktCapSheetName;
+            sheetNameCaptCategRange = obj.yahooDataSetUp.mktCapCategRangeSheet;
 
-            obj.symMarketCapRef = readtable(fileName, Sheet=sheetNameSymCap);
-            obj.marketCapRangeRef = readtable(fileName, Sheet=sheetNamecaptCategRange);
-            symbols = string(obj.symMarketCapRef.Symbol);
-            obj.symbols = sort(symbols, "ascend");           
+            obj.symMarketCapRef = readtable(fullFileName, 'Sheet', sheetNameSymCap);
+            obj.marketCapRangeRef = readtable(fullFileName, 'Sheet', sheetNameCaptCategRange);
+            sym = string(obj.symMarketCapRef.Symbol);
+            obj.symbols = sort(sym, "ascend");           
         end
 
 %-------------------------------------------------------------------------
         function obj = loadDataFromYahoo(obj)
             %loadDataFromYahoo Summary of this method goes here
-
+            startDate = obj.yahooDataSetUp.startDate;
+            endDate = obj.yahooDataSetUp.endDate;
+            interval = obj.yahooDataSetUp.interval;
+            maxRetry = obj.yahooDataSetUp.maxRetry;
+            
             priceVolumeData = loadDataFromYahooFcn (obj.symbols,...
-                obj.startDate, obj.endDate, obj.interval, obj.maxRetry);
+                startDate, endDate, interval, maxRetry);
             
             % transfer value to object
             obj.openPrice = priceVolumeData.openPrice;
@@ -120,19 +104,16 @@ classdef MarketData
 
             % transfer filename and sheetname
 
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
-            fileName = "PriceVolumeInput.xlsx";            
-
-            % fileName = obj.spreadhseetData_filename; 
-            % path = obj.spreadhseetData_path;
+            path  = obj.spreadSheetSetUp.path;
+            fileName = obj.spreadSheetSetUp.fileName;            
             fullFileName = fullfile(path, fileName);
 
-            openPriceSheet = obj.spreadhseetData_openPriceSheet; 
-            lowPriceSheet = obj.spreadhseetData_lowPriceSheet; 
-            highPriceSheet = obj.spreadhseetData_highPriceSheet;
-            closePriceSheet = obj.spreadhseetData_closePriceSheet; 
-            volumeSheet = obj.spreadhseetData_volumeSheet; 
-            indexIHSGSheet = obj.spreadhseetData_IndexIHSGSheet; 
+            openPriceSheet = obj.spreadSheetSetUp.openPriceSheet; 
+            lowPriceSheet = obj.spreadSheetSetUp.lowPriceSheet; 
+            highPriceSheet = obj.spreadSheetSetUp.highPriceSheet;
+            closePriceSheet = obj.spreadSheetSetUp.closePriceSheet; 
+            volumeSheet = obj.spreadSheetSetUp.volumeSheet; 
+            indexIHSGSheet = obj.spreadSheetSetUp.IndexIHSGSheet; 
             
             % read table for each price and volume data
             obj.openPrice = readtimetable(fullFileName, "Sheet", openPriceSheet);
@@ -147,11 +128,9 @@ classdef MarketData
 %-------------------------------------------------------------------------
         function obj = loadDataFromMatFile(obj)
            % transfer filename and sheetname
-
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
-            fileName = "PriceVolumeInput.mat";    
+            path = obj.matFileSetUp.path;
+            fileName = obj.matFileSetUp.fileName;
             fullFileName = fullfile(path, fileName);
-
             priceVolume = load(fullFileName);
             obj.openPrice = priceVolume.openPrice;
             obj.highPrice = priceVolume.highPrice;
@@ -182,21 +161,21 @@ classdef MarketData
             obj.closePrice = priceVolumeClean.closePrice;
             obj.volume = priceVolumeClean.volume ;
 
-            % calculate market cap for each symbol over the time
-            marketCap = calculateMarketCapFcn (obj);
-            obj.marketCap = marketCap;
-
-            % categorize Mkt Cap
-            marketCapCategory = calcMktCapCategoryFcn(obj);
-            obj.marketCapCategory = marketCapCategory;
-
         end
         
-%-------------------------------------------------------------------------
-    
+        %-------------------------------------------------------------------------
+
+        function obj = classifyMktCap(obj)
+            % calculate market cap for each symbol over the time
+            obj.marketCap = calculateMarketCapFcn (obj);
+
+            % classify Mkt Cap
+            obj.marketCapCategory = calcMktCapCategoryFcn(obj);
+            
+        end
         function saveDataToMatFile (obj)
-            path  = "C:\Users\kikim\OneDrive\Documents\MATLAB_Projects\BackTradeModule_Project_WFA_Feature_Development\DataInput";
-            fileName = "PriceVolumeInput.mat";
+            path  = obj.matFileSetUp.path;
+            fileName = obj.matFileSetUp.fileName;
             fullFileName = fullfile(path, fileName);
 
             openPrice = obj.openPrice;
@@ -241,7 +220,9 @@ function marketCap = calculateMarketCapFcn (inputArgs)
     % preallocatte marketCap
     
     marketData = inputArgs;
-    symbols = sort(eraseBetween(string(marketData.volume.Properties.VariableNames),5,11)) ;
+    symbols = string(marketData.volume.Properties.VariableNames);
+    symbols = strrep(symbols, "_volume","");
+    symbols = sort(symbols) ;
     timeCol = marketData.volume.Time;
     varType = repmat(["double"], 1,numel(symbols));
     marketCap = timetable('Size', [numel(timeCol), numel(symbols)],...

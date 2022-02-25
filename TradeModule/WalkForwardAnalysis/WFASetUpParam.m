@@ -32,23 +32,23 @@ classdef WFASetUpParam
     methods
         
         function obj = prepare(obj)
-        UBLookback = obj.lookbackUB;
+        ubLookback = obj.lookbackUB;
         
         obj.lbubConst = [            % open the array
-            1,  UBLookback;        % liquidityVolumeMALookback = paramInput(1);
+            1,  ubLookback;        % liquidityVolumeMALookback = paramInput(1);
             0,  10^6;               % liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
-            1,  UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(3) 
-            1,  UBLookback;        % liquidityValueMALookback  = paramInput(4);
+            1,  40;        %liquidityVolumeMANDayBuffer = paramInput(3) 
+            1,  ubLookback;        % liquidityValueMALookback  = paramInput(4);
             0,  10^6;              % liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million 
-            1,  UBLookback;        %liquidityValueMANDayBuffer = paramInput(6)
-            1,  UBLookback        % liquidityNDayVolumeValueBuffer = paramInput(7);
-            1,  UBLookback     % momentumPriceMALookback = paramInput(8);
+            1,  40;             %liquidityValueMANDayBuffer = paramInput(6)
+            1,  40           % liquidityNDayVolumeValueBuffer = paramInput(7);
+            1,  ubLookback     % momentumPriceMALookback = paramInput(8);
             0,  500            % momentumPriceMAToCloseThreshold = paramInput(9); % in percentage
-            1,  UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(10);
+            0,  40       % momentumPriceRetLowToCloseLookback = paramInput(10);
             0,  200             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
-            1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-            1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
-            0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
+            1,  40              % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
+            1,  40              % liquidityMomentumSignalBuffer = paramInput(13);
+            0,  60            % cutLossHighToCloseNDayLookback = paramInput(14);
             0,  10             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
             ] ;                 % close the array
 

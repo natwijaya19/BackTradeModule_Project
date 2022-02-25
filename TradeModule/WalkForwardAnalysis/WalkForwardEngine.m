@@ -5,9 +5,9 @@ classdef WalkForwardEngine
     %   list of properties:
     %   - marketData
     %   - wfaSetUp
-    %   - tradingSignalSetUp
-    %   - btEngineVectorizedSetUp
-    %   - btEngineEventDrivenSetUp
+    %   - tradingSignalParam
+    %   - btEngineVectorizedSetUp %TODO
+    %   - btEngineEventDrivenSetUp %TODO
     %   - etc
     %
     %   lis of methods:
@@ -17,7 +17,7 @@ classdef WalkForwardEngine
     %   - runBTEngineVectorized
     %   - runBTEngineEventDriven
     %   - runWalkForward
-    %   - optimTradingSignalParam
+    %   - optimSignalParam
     %   - generateStockPick
     %   - analyzeWFAResults
     %   - etc
@@ -25,20 +25,69 @@ classdef WalkForwardEngine
     
     %%=================================================================
     properties
-        Property1
+        wfaSetUp = WFASetUpParam;
+        marketData = MarketData;
+        
+    end
+    
+    properties (SetAccess = private)
+        tradingSignalParam
+        
     end
     
     methods
-        function obj = untitled2(inputArg1,inputArg2)
+        function obj = loadSymbols(obj)
             %UNTITLED2 Construct an instance of this class
             %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
+            obj.marketData= obj.marketData.loadSymbolMCapRef;
         end
         
-        function outputArg = method1(obj,inputArg)
+        function obj= loadDataFromYahoo(obj)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
-            outputArg = obj.Property1 + inputArg;
+            obj.marketData = obj.marketData.loadDataFromYahoo;
+        end
+%         function obj= loadDataFromSpreadsheet(obj)
+%             %METHOD1 Summary of this method goes here
+%             %   Detailed explanation goes here
+%             obj.marketData = obj.marketData.loadDataFromSpreadsheet;
+%         end
+        
+        function obj= loadDataFromMatFile(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.marketData = obj.marketData.loadDataFromMatFile;
+        end
+        
+        function obj= cleanMarketData(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.marketData = obj.marketData.cleanData;
+        end
+        
+        function saveDataToMatFile(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.marketData.saveDataToMatFile;
+        end
+        
+        function saveDataToSpreadsheet(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.marketData.saveDataToSpreadsheet;
+        end
+        
+        function obj= loadDataFromSpreadsheet(obj)
+            %METHOD1 Summary of this method goes here
+            %   Detailed explanation goes here
+            obj.marketData = obj.marketData.loadDataFromSpreadsheet;
+        end
+        
+        
+        function obj = optimSignalParam(obj)
+            obj.wfaSetUp.lbubConst = obj.wfaSetUp.prepare;
+            
+            
         end
     end
 end
