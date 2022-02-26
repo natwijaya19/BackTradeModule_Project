@@ -23,6 +23,7 @@ function tradingSignalTTOut = generateTradingSignalFcn (dataInput, tradingSignal
     % liquidityMomentumSignalBuffer 
     % cutLossHighToCloseNDayLookback 
     % cutLossHighToCloseMaxPct 
+    % nDayBackShift
 
 % preparation 
 %======================================================================================

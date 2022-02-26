@@ -5,7 +5,7 @@ classdef WFASetUpParam
     properties
         % WFA specific set up
         nWalk = 2 ; % Number of walk for the whole walk forwad
-        lookbackUB = 200; % lookback upper bound
+        lookbackUB = 300; % lookback upper bound
         nstepTrain = 60; % Number of step for training datastasket
         nstepTest = 20; % Number of step for testing dataset
         
@@ -14,18 +14,21 @@ classdef WFASetUpParam
         maxCapAllocation = 0.2;
         
         % optimization set up
-%         optimLookbackStep = nstepTrain; %TODO lets put this later in the
-%         function
-        maxDDThreshold = -0.20;
-        minPortfolioReturn = 1.10;
-        minDailyRetThreshold = -0.20;
         maxFcnEval = 300;
-        lbubConst
+
+        % nlConstParam
+        maxDDThreshold = -15/100;
+        minPortRet = 1.05;
+        minDailyRetThreshold = -20/100;
+        minLast20DRetThreshold = -5/100;
+        minLast60DRetThreshold = 0;
+        minLast200DRetThreshold = 0;
+
         
     end
 
     properties (SetAccess = private)
-        
+    lbubConst
         
     end
     
@@ -36,10 +39,10 @@ classdef WFASetUpParam
         
         obj.lbubConst = [            % open the array
             1,  ubLookback;        % liquidityVolumeMALookback = paramInput(1);
-            0,  10^6;               % liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
+            1,  10^6;               % liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
             1,  40;        %liquidityVolumeMANDayBuffer = paramInput(3) 
             1,  ubLookback;        % liquidityValueMALookback  = paramInput(4);
-            0,  10^6;              % liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million 
+            1,  10^6;              % liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million 
             1,  40;             %liquidityValueMANDayBuffer = paramInput(6)
             1,  40           % liquidityNDayVolumeValueBuffer = paramInput(7);
             1,  ubLookback     % momentumPriceMALookback = paramInput(8);
@@ -50,6 +53,7 @@ classdef WFASetUpParam
             1,  40              % liquidityMomentumSignalBuffer = paramInput(13);
             0,  60            % cutLossHighToCloseNDayLookback = paramInput(14);
             0,  10             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
+            1,  1        % nDayBackShift = paramInput(16);
             ] ;                 % close the array
 
         

@@ -1,4 +1,4 @@
-function priceVolumeClean = cleanDataFcn (priceVolumeRaw, symbolRef)
+function priceVolumeClean = cleanDataFcn (priceVolumeRaw)
 % cleandataFcn is function to preprocess data
 % 
 % Preprocessing steps: 
@@ -18,7 +18,8 @@ volumeTT = priceVolumeRaw.volume;
 % take only timeseries data based on the symbolsRef based
 
 % number of symbol
-symList = sort(symbolRef, "ascend");
+symList = strrep(openPriceTT.Properties.VariableNames, "_open", "");
+symList = sort(string(symList), "ascend");
 nSym = numel (symList) ; 
 
 symListOpenPrice = strcat(symList,"_open");

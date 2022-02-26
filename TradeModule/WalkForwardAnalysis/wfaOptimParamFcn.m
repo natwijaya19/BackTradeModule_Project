@@ -1,5 +1,5 @@
-function wfaOptimStructOut = wfaOptimParamFcn(marketData, wfaSetUpParam)
-%UNTITLED Summary of this function goes here
+% function wfaOptimStructOut = wfaOptimParamFcn(marketData, wfaSetUpParam)
+%wfaOptimParamFcn Summary of this function goes here
 %   Detailed explanation goes here
 % Input arguments
 % - dataInput contains timetables of openPrice, highPrice, lowPrice, closePrice, volume and mktCapCategory 
@@ -27,17 +27,23 @@ tradingCost = wfaSetUpParam.tradingCost;
 maxCapAllocation = wfaSetUpParam.maxCapAllocation;
 
 % optimization set up
-optimLookbackStep = wfaSetUpParam.nstepTrain; %TODO lets put this later in the function
-maxDDThreshold = wfaSetUpParam.maxDDThreshold;
-minPortfolioReturn = wfaSetUpParam.minPortfolioReturn;
-minDailyRetThreshold = wfaSetUpParam.minDailyRetThreshold;
+optimLookbackStep = wfaSetUpParam.nstepTrain;
 maxFcnEval = wfaSetUpParam.maxFcnEval;
 lbubConst = wfaSetUpParam.lbubConst;
+
+nlConstParam.maxDDThreshold  = wfaSetUpParam.maxDDThreshold;
+nlConstParam.minPortRet = wfaSetUpParam.minPortRet;
+nlConstParam.minDailyRetThreshold = wfaSetUpParam.minDailyRetThreshold;
+nlConstParam.Last20DRetThreshold = wfaSetUpParam.minLast20DRetThreshold;
+nlConstParam.Last60DRetThreshold = wfaSetUpParam.minLast60DRetThreshold;
+nlConstParam.Last200DRetThreshold = wfaSetUpParam.minLast200DRetThreshold;
+
 
 % number of required nDataRowRequired 
 nstepWalk = nWalk*nstepTest + lookbackUB + nstepTrain;
 additionalData = nstepTest; % additional data for safety required data
 nDataRowRequired = nstepWalk+additionalData;
+%-------------------------------------------------------------------------
 
 %% prepare data for for WFA
 dataInput.openPrice = marketData.openPrice(end-nDataRowRequired+1:end,:);
@@ -56,44 +62,32 @@ validIF = nRowDataAvailable < nDataRowRequired;
 if validIF
     error(message('finance:WFA:nRowDataAvailable must be larger than nDataRowRequired'));
 end
+%-------------------------------------------------------------------------
 
 %% marking idx step for each walk
 % idx for start and end of test steps
-
 nDataRowRequired = size(dataInput.openPrice,1);
-lastEndStepTestIdx = nDataRowRequired;
-firstEndTestIdx = lastEndStepTestIdx - (nWalk-1)*nstepTest;
-endStepTestIdx = firstEndTestIdx:nstepTest:lastEndStepTestIdx;
-startStepTestIdx = endStepTestIdx - nstepTest +1;
+lastEndStepTest = nDataRowRequired;
+lastStartStepTest = lastEndStepTest - nstepTest +1;
+firstEndStepTest = lastEndStepTest - (nWalk-1)*nstepTest;
+firstStartStepTest = firstEndStepTest - nstepTest +1;
+
+endStepTest = firstEndStepTest:nstepTest:lastEndStepTest;
+startStepTest= endStepTest - nstepTest +1;
 
 % idx for start and end of train steps
-endStepTrainIdx = startStepTestIdx-1;
-startStepTrainIdx = endStepTrainIdx - nstepTrain+1;
+endStepTrain = startStepTest-1;
+startStepTrain = endStepTrain - nstepTrain+1;
 
 % idx for start and end of lookback steps
-endStepLookbackIdx = startStepTrainIdx-1;
-startStepLookbackIdx = endStepLookbackIdx - lookbackUB+1;
+endStepLookback = startStepTrain-1;
+startStepLookback = endStepLookback - lookbackUB+1;
 
+ 
 % determine index and timecolumn for each step and walk
 timeCol = dataInput.openPrice.Time;
 nRow = numel(timeCol);
-idx = (1:nRow)';
-% lookback set idx
-startStepLookbackIdxTT = sum(idx == startStepLookbackIdx,2);
-endStepLookbackIdxTT = sum(idx == endStepLookbackIdx,2);
-% train set idx
-startStepTrainIdxT = sum(idx == startStepTrainIdx,2);
-endStepTrainIdxT = sum(idx == endStepTrainIdx,2);
-
-%test set idx
-startStepTestIdxT = sum(idx == startStepTestIdx,2);
-endStepTestIdxT = sum(idx == endStepTestIdx,2);
-
-% time column index for looping marker
-% timeColIdx = timetable(timeCol, idx, startStepLookbackIdxTT,...
-%     endStepLookbackIdxTT, startStepTrainIdxT, endStepTrainIdxT,...
-%     startStepTestIdxT, endStepTestIdxT);
-
+%-------------------------------------------------------------------------
 
 %% prepare market cap category for loop to get the list of symbols at each EndStepTrainIdx for each
 % mktCapCategory
@@ -101,10 +95,22 @@ marketCapCategory = dataInput.marketCapCategory;
 uniqueMktCap = unique(marketCapCategory.Variables);
 uniqueMktCap(ismissing(uniqueMktCap)) = [];
 uniqueMktCap= sort(uniqueMktCap);
+mktCapList = uniqueMktCap;
 
 symbols = marketCapCategory.Properties.VariableNames;
-mCapAtEndStepTrainIdx = marketCapCategory(endStepTrainIdx,:);
-mCapAtEndStepTrainIdxVar = mCapAtEndStepTrainIdx.Variables;
+
+mCapEndStepTrainIdx = marketCapCategory(endStepTrain,:);
+mCapEndStepTrainIdxVar = mCapEndStepTrainIdx.Variables;
+
+% preallocate tradingSignalTT
+timeCol = dataInput.openPrice.Time;
+timeColSignalTT = timeCol(startStepTest(1):endStepTest(end));
+openPrice = dataInput.openPrice;
+tradingSignalTT = openPrice(timeColSignalTT,:);
+tradingSignalTT.Variables = zeros(size(tradingSignalTT));
+tradingSignalTT.Properties.VariableNames = strrep(tradingSignalTT.Properties.VariableNames,"_open",""); 
+
+%-------------------------------------------------------------------------
 
 %% preallocate optimizedSignalParam for each startTrainStepIdx and marketCapCategory
 tradingSignalParamVarName = [   
@@ -122,137 +128,175 @@ tradingSignalParamVarName = [
                     "momentumPriceRetLowToCloseNDayBuffer"; 
                     "liquidityMomentumSignalBuffer"; 
                     "cutLossHighToCloseNDayLookback"; 
-                    "cutLossHighToCloseMaxPct";  ];
+                    "cutLossHighToCloseMaxPct";  
+                    "nDayBackShift"];
 
 
 nCol = numel(uniqueMktCap) * numel(tradingSignalParamVarName);
 nRow = nWalk;
 varTypes = repmat({'double'},1,nCol);
 sz = [nRow, nCol];
-timeCol = mCapAtEndStepTrainIdx.Time;
+timeCol = marketCapCategory(endStepTrain,:).Time;
 
 optimTradingSignalParam = timetable('Size', sz, 'VariableTypes', varTypes,...
                           'RowTimes', timeCol);
 
 optimTradingSignalParamVarNames = optimTradingSignalParam.Properties.VariableNames;
 
+step = numel(tradingSignalParamVarName);
+startTradingParamIdx = 1:step:nCol;
+endTradingParamIdx = (startTradingParamIdx + step)-1;
+
 for idx = 1:numel(uniqueMktCap)
 
-    startIdx = numel(tradingSignalParamVarName)*(idx-1)+1;
-    endIdx = idx*numel(tradingSignalParamVarName);
     mCapIdx = string(uniqueMktCap(idx));
-    mCapIdx = strrep(mCapIdx,"Lower","lower");
-    mCapIdx = strrep(mCapIdx,"Upper","upper");
     mCapIdx = strrep(mCapIdx," ","");
     optimTradingSignalParamVarNames = string(optimTradingSignalParamVarNames);
     
+    startIdx = startTradingParamIdx(idx);
+    endIdx = endTradingParamIdx(idx);
     optimTradingSignalParamVarNames(startIdx:endIdx) = strcat(mCapIdx,"_",...
                             tradingSignalParamVarName);
 end
 
 optimTradingSignalParam.Properties.VariableNames = optimTradingSignalParamVarNames;
 
+%-------------------------------------------------------------------------
 % preallocate timetable for output FVal >> optimized cumulative return timetable
 % in training dataset
 nCol = numel(uniqueMktCap);
 nRow = nWalk;
 varTypes = repmat({'double'},1,nCol);
 sz = [nRow, nCol];
-timeCol = mCapAtEndStepTrainIdx.Time;
+timeCol = marketCapCategory(endStepTrain,:).Time;
 
 optimCumRetAtTrainData = timetable('Size', sz, 'VariableTypes', varTypes,...
                         'RowTimes', timeCol, 'VariableNames', uniqueMktCap);
+%-------------------------------------------------------------------------
+
 % preallocate timetable for output flag >> exitflagAtTrainData timetable 
 % in training dataset
 varTypes = repmat({'string'},1,nCol);
 exitflagAtTrainData = timetable('Size', sz, 'VariableTypes', varTypes,...
                     'RowTimes', timeCol, 'VariableNames', uniqueMktCap);
-%=========================================================================
-
+%-------------------------------------------------------------------------
 
 %% do walk-forwad
 nMktCap = numel(uniqueMktCap);
-% optimParam for each walk
+
+% prepare for waitbarFig
 msg = "Please wait. Optimizing parameter for walk forward analysis";
 waitbarFig = waitbar(0,msg);
+timeColDataInput = dataInput.openPrice.Time;
+% optimParam for each walk
+nIteration = nWalk*nMktCap;
 for walkIdx = 1:nWalk
-    
-    % show wait bar counting the walkIdx
-    waitbar(walkIdx/nWalk, waitbarFig, msg); 
-%     disp(walkIdx)
 
-    % setup start and end for loopbackDataset, trainDataset and testDataset
-    startLookbackAtWalkIdx = startStepLookbackIdx(walkIdx);
-%     endLookbackAtWalkIdx = endStepLookbackIdx(walkIdx);
-    
-%     startTrainAtWalkIdx = startStepTrainIdx(walkIdx);
-    endTrainAtWalkIdx = endStepTrainIdx(walkIdx);
-    
-%     startStepTestAtWalkIdx = startStepTestIdx(walkIdx);
-%     endStepTestAtWalkIdx = endStepTestIdx(walkIdx);
-    
-    % setup dataInputStruct for each walk
-    startIdx = startLookbackAtWalkIdx;
-    endIdx = endTrainAtWalkIdx;
-    dataInputWalkIdx.openPrice = dataInput.openPrice(startIdx:endIdx,:);
-    dataInputWalkIdx.highPrice = dataInput.highPrice(startIdx:endIdx,:);
-    dataInputWalkIdx.lowPrice = dataInput.lowPrice(startIdx:endIdx,:);
-    dataInputWalkIdx.closePrice = dataInput.closePrice(startIdx:endIdx,:);
-    dataInputWalkIdx.volume = dataInput.volume(startIdx:endIdx,:);
-    dataInputWalkIdx.marketCapCategory = dataInput.marketCapCategory(startIdx:endIdx,:);
+    % setUp lookbackIdx
+    startLookbackIdx = startStepLookback(walkIdx);
+    endLookbackIdx = endStepLookback(walkIdx);
+
+    % setUp trainIdx
+    startTrainIdx = startStepTrain(walkIdx);
+    endTrainIdx = endStepTrain(walkIdx);
+
+    % setUp testIdx
+    startTestIdx = startStepTest(walkIdx);
+    endTestIdx = endStepTest(walkIdx);
+
+    timeColTrainWalkIdx = timeColDataInput(startLookbackIdx:endTrainIdx);
 
     % optimparam for each mCap
     for mCapIdx = 1: nMktCap
-        if mCapIdx == 6
-            disp(mCapIdx)
-        end
-        
+
+        % show wait bar counting each walkIdx
+        progressCounter = (walkIdx*mCapIdx)/nIteration;
+        waitbar(progressCounter, waitbarFig, msg);
+
+        disp(strcat("walkIdx ",string(walkIdx)," | mCapIdx ",string(mCapIdx)))
+
         %setUp list of symbols for each mktCap category in each walkIdx
-%         MktCapCategIdx = uniqueMktCap(mCapIdx);
-        mCapIdxAtWalkIdx = mCapAtEndStepTrainIdxVar(walkIdx, :) == uniqueMktCap(mCapIdx);
-        SymInmCapIdxAtWalkIdx = symbols(mCapIdxAtWalkIdx);
+        mCapIdxAtWalkIdx = mCapEndStepTrainIdxVar(walkIdx, :) == uniqueMktCap(mCapIdx);
+        SymInMCapIdxWalkIdx = symbols(mCapIdxAtWalkIdx);
+
+        % setUp dataInput contains symbols of mCapIdx only  in each walk
+        openPriceVarName = strcat(SymInMCapIdxWalkIdx,"_open");
+        dataInputTrain.openPrice = dataInput.openPrice(timeColTrainWalkIdx,openPriceVarName);
+
+        highPriceVarName = strcat(SymInMCapIdxWalkIdx,"_high");
+        dataInputTrain.highPrice = dataInput.highPrice(timeColTrainWalkIdx,highPriceVarName);
         
-        % setUp dataInput contains symbols in each mktCap category in each walk
-        openPriceVarName = strcat(SymInmCapIdxAtWalkIdx,"_open");
-        dataInputWalkMCapIdx.openPrice = dataInputWalkIdx.openPrice(:,openPriceVarName);
-        highPriceVarName = strcat(SymInmCapIdxAtWalkIdx,"_high");
-        dataInputWalkMCapIdx.highPrice = dataInputWalkIdx.highPrice(:,highPriceVarName);
-        lowPriceVarName = strcat(SymInmCapIdxAtWalkIdx,"_low");
-        dataInputWalkMCapIdx.lowPrice = dataInputWalkIdx.lowPrice(:,lowPriceVarName);    
-        closePriceVarName = strcat(SymInmCapIdxAtWalkIdx,"_close");
-        dataInputWalkMCapIdx.closePrice = dataInputWalkIdx.closePrice(:,closePriceVarName);        
-        volumeVarName = strcat(SymInmCapIdxAtWalkIdx,"_volume");
-        dataInputWalkMCapIdx.volume = dataInputWalkIdx.volume(:,volumeVarName);
+        lowPriceVarName = strcat(SymInMCapIdxWalkIdx,"_low");
+        dataInputTrain.lowPrice = dataInput.lowPrice(timeColTrainWalkIdx,lowPriceVarName);
+       
+        closePriceVarName = strcat(SymInMCapIdxWalkIdx,"_close");
+        dataInputTrain.closePrice = dataInput.closePrice(timeColTrainWalkIdx,closePriceVarName);
         
-        % %TODO clean data input for each mCap category in each walkIdx 
-%         priceVolumeClean = cleanDataFcn (priceVolumeRaw, symbolRef)
-        
-        
+        volumeVarName = strcat(SymInMCapIdxWalkIdx,"_volume");
+        dataInputTrain.volume = dataInput.volume(timeColTrainWalkIdx,volumeVarName);
+
+
+        % clean dataInput %TODO
+        priceVolumeRaw = dataInputTrain;
+        priceVolumeClean = cleanDataFcn (priceVolumeRaw);
+
         % transfer the dataInput
-        dataStructInput = dataInputWalkMCapIdx;
-        
+        dataStructInput = priceVolumeClean;
+
         optimStructOut = optimParamsFcn (dataStructInput, optimLookbackStep,...
-                     tradingCost, maxCapAllocation, maxDDThreshold,...
-                     minPortfolioReturn, minDailyRetThreshold,...
-                     lbubConst, maxFcnEval);
+            tradingCost, maxCapAllocation, nlConstParam,...
+            lbubConst, maxFcnEval);
 
+        % backtest the optimTradingSignal on test dataset
+        % setup the test dataset
+        endTestSet = endTestIdx;
+        startTestSet = endTestSet - nstepTest - lookbackUB +1;
+        timeColTestWalkIdx = timeColDataInput(startTestSet:endTestSet);
 
-        % assign the optimizedParam into optimTradingSignalParam 
-        startIdx = numel(tradingSignalParamVarName)*(mCapIdx-1)+1;
-        endIdx = mCapIdx*numel(tradingSignalParamVarName);
-        optimTradingSignalParam(walkIdx, startIdx:endIdx).Variables =...
-                                     optimStructOut.optimizedTradingSignalParam;
+        dataInputTest.openPrice = dataInput.openPrice(timeColTestWalkIdx,openPriceVarName);
+        dataInputTest.highPrice = dataInput.highPrice(timeColTestWalkIdx,highPriceVarName);
+        dataInputTest.lowPrice = dataInput.lowPrice(timeColTestWalkIdx,lowPriceVarName);
+        dataInputTest.closePrice = dataInput.closePrice (timeColTestWalkIdx,closePriceVarName);
+        dataInputTest.volume = dataInput.volume(timeColTestWalkIdx,volumeVarName);
+
+        % generate tradingSignal 
+        tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
+        tradingSignalTTOut = generateTradingSignalFcn (dataInputTest, tradingSignalParameter);
         
+        % assign signal to tradingSignalTT
+        timeColSignal = timeColTestWalkIdx(end-nstepTest+1:end,:);
+        tradingSignalTT(timeColSignal,SymInMCapIdxWalkIdx) = tradingSignalTTOut(timeColSignal,:);
+
+        % assign the optimizedParam into optimTradingSignalParam
+        colIdx = startTradingParamIdx(mCapIdx):endTradingParamIdx(mCapIdx);
+        timeColOptimParam = timeColDataInput(endTrainIdx);
+        
+        optimTradingSignalParam(timeColOptimParam, colIdx).Variables =...
+                                optimStructOut.optimizedTradingSignalParam;
+
         % assign FVal into optimCumRetAtTrainData
-        optimCumRetAtTrainData(walkIdx, mCapIdx).Variables = optimStructOut.fval;
+        optimCumRetAtTrainData(timeColOptimParam, mCapIdx).Variables = optimStructOut.fval;
 
         % assign exitflag into exitflagAtTrainData
-        exitflagAtTrainData(walkIdx, mCapIdx).Variables = optimStructOut.exitflag;
-        
+        exitflagAtTrainData(timeColOptimParam, mCapIdx).Variables = optimStructOut.exitflag;
+
     end
 
 end
-toc
+%% 
+
+% prepare data backtest teh signal against the market data
+dataInputBacktest.openPrice = dataInput.openPrice(timeColSignalTT,:);
+dataInputBacktest.highPrice = dataInput.highPrice(timeColSignalTT,:);
+dataInputBacktest.lowPrice = dataInput.lowPrice(timeColSignalTT,:);
+dataInputBacktest.closePrice = dataInput.closePrice(timeColSignalTT,:);
+dataInputBacktest.volume = dataInput.volume(timeColSignalTT,:);
+
+priceVolumeClean = cleanDataFcn (dataInputBacktest);
+
+% generate backtest output
+btResultStruct = btEngineVectorizedFcn (priceVolumeClean, tradingSignalTT,...
+    tradingCost, maxCapAllocation);
 
 
 % assign output variables into a struct
@@ -260,7 +304,9 @@ wfaOptimStructOut.optimTradingSignalParam = optimTradingSignalParam;
 wfaOptimStructOut.optimCumRetAtTrainData = optimCumRetAtTrainData;
 wfaOptimStructOut.exitflagAtTrainData = exitflagAtTrainData;
 wfaOptimStructOut.wfaSetUpParam = wfaSetUpParam;
+wfaOptimStructOut.btResultStruct = btResultStruct;
+wfaOptimStructOut.tradingSignalTT = tradingSignalTT;
 %=========================================================================
 
-end
+% end
 

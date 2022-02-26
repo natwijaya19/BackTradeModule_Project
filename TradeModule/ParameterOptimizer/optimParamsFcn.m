@@ -1,6 +1,6 @@
 function optimStructOut = optimParamsFcn (dataStructInput,...
               optimLookbackStep, tradingCost, maxCapAllocation,...
-          maxDDThreshold, minPortfolioReturn, minDailyRetThreshold, LBUBConst, maxFcnEval)
+          nlConstParam, LBUBConst, maxFcnEval)
 
     % optimParamsFcn - function for parameter optimization
     % USAGE:
@@ -48,6 +48,7 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
 %                                 1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
 %                                 0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
 %                                 0,  500             % cutLossHighToCloseMaxPct = paramInput(15);
+%                                 1, 1               % nDayBackShift = paramInput(16);
 %                                                 ] ;  % close the array
 
     %% define function handle of objectiveFcn and nonLinearConstraintFcn
@@ -56,30 +57,27 @@ function optimStructOut = optimParamsFcn (dataStructInput,...
                                 maxCapAllocation, optimLookbackStep);
     nlconst = @(x)nonLinearConstraintFcn (x, dataStructInput,...
                   optimLookbackStep, tradingCost, maxCapAllocation,...
-                  maxDDThreshold, minPortfolioReturn, minDailyRetThreshold);
+                  nlConstParam);
 
     objconstr = packfcn(obj,nlconst) ;
     F = objconstr ;
 
     %% define other constrains
-    nVars = 15;
+    nVars = 16;
     intConst = 1:nVars;
     LB = LBUBConst(:,1)';
     UB = LBUBConst(:,2)';
 
     %% setup optimization options
     options = optimoptions('surrogateopt','PlotFcn',"surrogateoptplot", ...
-        "ConstraintTolerance",1e-2,...
-        "UseParallel", useParallel, "UseVectorized",true);
-
-    % options template in case needed    
-    %"MaxFunctionEvaluations",maxFcnEval
+        "ConstraintTolerance",1e-2, "UseParallel", useParallel,...
+        "UseVectorized",false, "MaxFunctionEvaluations",maxFcnEval, "BatchUpdateInterval",N);
 
     %% call surrogateopt to solve the problem
     [sol,fval,exitflag,output] = surrogateopt(F,LB,UB,intConst,options) ;
 
     %% put UB into tradingSignalParam if FVal < minPortfolioReturn
-    if fval <= -(minPortfolioReturn) 
+    if fval <= -(nlConstParam.minPortRet) 
         optimizedTradingSignalParam = sol ;
         else
         optimizedTradingSignalParam = UB ;

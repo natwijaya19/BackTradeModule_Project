@@ -1,6 +1,5 @@
 function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataStructInput,...
-              optimLookbackStep, tradingCost, maxCapAllocation,...
-              maxDDThreshold, minPortfolioReturn, minDailyRetThreshold)
+              optimLookbackStep, tradingCost, maxCapAllocation, nlConstParam)
 % 
 % nonLinearConstraintFcn
 % 
@@ -26,6 +25,17 @@ function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataStructInput,
 % minPortfolioReturn = 1.15;
 % minDailyRetThreshold = -0.20;
 
+%======================================================================
+
+% transfer input variables
+maxDDThreshold = nlConstParam.maxDDThreshold ;
+minPortRet = nlConstParam.minPortRet ;
+minDailyRetThreshold = nlConstParam.minDailyRetThreshold ;
+minLast20DRetThreshold = nlConstParam.Last20DRetThreshold ;
+minLast60DRetThreshold = nlConstParam.Last60DRetThreshold ;
+minLast200DRetThreshold = nlConstParam.Last200DRetThreshold ;
+
+
 % generate signal
     tradingSignalOut = generateTradingSignalFcn (dataStructInput, tradingSignalParam);
 
@@ -36,7 +46,7 @@ resultStruct = btEngineVectorizedFcn (dataStructInput, tradingSignalIn,...
 
 % calculate equityCurve at for the evaluation
 equityCurvePortfolioVar_raw = resultStruct.equityCurvePortfolioTT.Variables;
-equityCurvePortfolioVar = equityCurvePortfolioVar_raw(end-optimLookbackStep: end);
+equityCurvePortfolioVar = equityCurvePortfolioVar_raw(end-optimLookbackStep+1: end);
 
 % % calcluate return for the given  optimLookbackWindow minPortfolioReturn
 startOptimPortValue = equityCurvePortfolioVar(1);
@@ -50,13 +60,67 @@ maxDD = -maxdrawdown(equityCurvePortfolioVar);
 
 % calculate dailyRet for minDailyRetThreshold
 dailyRet = tick2ret(equityCurvePortfolioVar);
-minDailyRet = min(dailyRet);
+DailyRetMin = min(dailyRet);
+
+
+% Last 20 days return
+nDays = 20;
+portCumRet = equityCurvePortfolioVar;
+Last20DRet = portCumRet ;
+
+if numel (portCumRet) <= nDays
+    Last20DRetMin = 0;
+end
+
+Last20DRet(nDays+1:end,:) = (portCumRet(nDays+1:end,:) ./ portCumRet(1:end-nDays,:))-1;
+Last20DRet(1:nDays,:) = 0 ;
+Last20DRet (isnan(Last20DRet)) = 0 ;
+Last20DRet (isnan(Last20DRet)) = 0 ;
+Last20DRet (isinf(Last20DRet)) = 0 ;
+Last20DRetMin = min(Last20DRet);
+
+% Last 20 days return
+nDays = 60;
+portCumRet = equityCurvePortfolioVar;
+Last60DRet = portCumRet ;
+
+if numel (portCumRet) <= nDays
+    Last60DRetMin = 0;
+end
+
+Last60DRet(nDays+1:end,:) = (portCumRet(nDays+1:end,:) ./ portCumRet(1:end-nDays,:))-1;
+Last60DRet(1:nDays,:) = 0 ;
+Last60DRet (isnan(Last60DRet)) = 0 ;
+Last60DRet (isnan(Last60DRet)) = 0 ;
+Last60DRet (isinf(Last60DRet)) = 0 ;
+Last60DRetMin = min(Last60DRet);
+
+% Last 200 days return
+nDays = 200;
+portCumRet = equityCurvePortfolioVar;
+Last200DRet = portCumRet ;
+
+if numel (portCumRet) <= nDays
+    Last200DRetMin = 0;
+end
+
+Last200DRet(nDays+1:end,:) = (portCumRet(nDays+1:end,:) ./ portCumRet(1:end-nDays,:))-1;
+Last200DRet(1:nDays,:) = 0 ;
+Last200DRet (isnan(Last200DRet)) = 0 ;
+Last200DRet (isnan(Last200DRet)) = 0 ;
+Last200DRet (isinf(Last200DRet)) = 0 ;
+Last200DRetMin = min(Last200DRet);
 
 
 % formulate the constraints
 c = [   maxDDThreshold - maxDD;
-        minPortfolioReturn - cumPortfolioReturn;
-        minDailyRetThreshold - minDailyRet];
+        minPortRet - cumPortfolioReturn;
+        minDailyRetThreshold - DailyRetMin;
+        minLast20DRetThreshold - Last20DRetMin;
+        minLast60DRetThreshold - Last60DRetMin;
+        minLast200DRetThreshold - Last200DRetMin;
+        ];
+
 ceq = [];
 
 clearvars -except c eq

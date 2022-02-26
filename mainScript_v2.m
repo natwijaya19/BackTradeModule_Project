@@ -18,38 +18,44 @@ wfaTester = WalkForwardEngine;
 %% load symbols reference from an excel file
 tic
 wfaTester = wfaTester.loadSymbols;
-toc
+tLoadSym = toc
 %% load data from yahoo finance
 % tic
 % wfaTester = wfaTester.loadDataFromYahoo;
-% toc
+% tLoadYahoo = toc
 %% load priceVolume data from matFile
 tic
 wfaTester = wfaTester.loadDataFromMatFile;
-toc
+tLoadMatFile = toc
 %% calculate mktCap data
 tic
 wfaTester= wfaTester.classifyMktCap;
-toc
+tClassifyMCap = toc
 
 %% test clean price volume data
 % tic
 % wfaTester = wfaTester.cleanMktData;
-% toc
+% tCleanMktData = toc
 
 %% run the signalParam optimization
 % setup the wfaParameters
-wfaTester.wfaSetUp.nstepTest = 3*20;
-wfaTester.wfaSetUp.nstepTrain = wfaTester.wfaSetUp.nstepTest*8;
-% wfaTester.wfaSetUp.nWalk = 1;
+tic
+wfaTester.wfaSetUp = wfaTester.wfaSetUp.prepare  
+wfaTester.wfaSetUp.nWalk = 4;
+wfaTester.wfaSetUp.nstepTest = 10;
+wfaTester.wfaSetUp.nstepTrain = 60;
 
-wfaTester.wfaSetUp
 
+
+marketData = wfaTester.marketData
+wfaSetUpParam = wfaTester.wfaSetUp
+
+tOptimParam = toc
 %% 
 
 % optimize the signalParam in trainDataset
 
-wfaTester = wfaTester.runWalkForward;
+% wfaTester = wfaTester.runWalkForward;
 
 
 % generate signal and return in testDataset
@@ -74,7 +80,10 @@ wfaTester = wfaTester.runWalkForward;
 % 
 % Histogram: monthly and daily returns histogram
 
-
+% portretCumret = ret2tick(wfaOptimStructOut.btResultStruct.dailyNetRetPortfolioTT);
+% x = portretCumret.Time ;
+% y = portretCumret.Variables;
+% plot(x,y)
 %% save the results in matfile
 
 
