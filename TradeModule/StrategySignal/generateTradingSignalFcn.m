@@ -5,27 +5,27 @@ function tradingSignalTTOut = generateTradingSignalFcn (dataInput, tradingSignal
 %       tradingSignalOut = generateTradingSignalFcn (dataInput, tradingSignalParameter)
 %
 % Input arguments:
-%     
-    % dataInput struct - consist of openPrice, highPrice, lowPrice,
-    %                       closePrice, volume.
-    % liquidityVolumeMALookback
-    % liquidityVolumeMAThreshold
-    % liquidityVolumeMANDayBuffer 
-    % liquidityValueMALookback  
-    % liquidityValueMAThreshold  
-    % liquidityValueMANDayBuffer 
-    % liquidityNDayVolumeValueBuffer 
-    % momentumPriceMALookback 
-    % momentumPriceMAToCloseThreshold 
-    % momentumPriceRetLowToCloseLookback 
-    % momentumPriceRetLowToCloseThreshold 
-    % momentumPriceRetLowToCloseNDayBuffer 
-    % liquidityMomentumSignalBuffer 
-    % cutLossHighToCloseNDayLookback 
-    % cutLossHighToCloseMaxPct 
-    % nDayBackShift
+%
+% dataInput struct - consist of openPrice, highPrice, lowPrice,
+%                       closePrice, volume.
+% liquidityVolumeMALookback
+% liquidityVolumeMAThreshold
+% liquidityVolumeMANDayBuffer
+% liquidityValueMALookback
+% liquidityValueMAThreshold
+% liquidityValueMANDayBuffer
+% liquidityNDayVolumeValueBuffer
+% momentumPriceMALookback
+% momentumPriceMAToCloseThreshold
+% momentumPriceRetLowToCloseLookback
+% momentumPriceRetLowToCloseThreshold
+% momentumPriceRetLowToCloseNDayBuffer
+% liquidityMomentumSignalBuffer
+% cutLossHighToCloseNDayLookback
+% cutLossHighToCloseMaxPct
+% nDayBackShift
 
-% preparation 
+% preparation
 %======================================================================================
 
 %% data preparation
@@ -44,11 +44,11 @@ volume = dataInput.volume;
 
 %% parameter preparation
 %---------------------------------------------------------------------------
-% sample 
+% sample
 % tradingSignalParameter =[               % open the array
 %                             80        % liquidityVolumeMALookback = paramInput(1);
 %                             0.1        % liquidityVolumeMAThreshold = paramInput(2);
-%                             3       %liquidityVolumeMANDayBuffer = paramInput(3) 
+%                             3       %liquidityVolumeMANDayBuffer = paramInput(3)
 %                             80        % liquidityValueMALookback  = paramInput(4);
 %                             0.1        % liquidityValueeMAThreshold  = paramInput(5);
 %                             3       %liquidityValueMANDayBuffer = paramInput(6)
@@ -68,10 +68,10 @@ volume = dataInput.volume;
 paramInput = tradingSignalParameter; % param array transfer
 
 liquidityVolumeMALookback = paramInput(1);
-liquidityVolumeMAThreshold = paramInput(2) * 100; % 100 share per lot
-liquidityVolumeMANDayBuffer = paramInput(3); 
+liquidityVolumeMAThreshold = paramInput(2) / 100 ; % percentage from LB to UB
+liquidityVolumeMANDayBuffer = paramInput(3);
 liquidityValueMALookback  = paramInput(4);
-liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million 
+liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million
 liquidityValueMANDayBuffer = paramInput(6);
 liquidityNDayVolumeValueBuffer = paramInput(7);
 momentumPriceMALookback = paramInput(8);
@@ -111,15 +111,15 @@ end
 liquidityVolumeMALookback;
 liquidityVolumeMAThreshold;
 liquidityVolumeMANDayBuffer;
-volumeMA = movmean(volume.Variables, [liquidityValueMALookback, 0], 1);
+volumeMA = movmean(volume.Variables, [liquidityValueMALookback, 0], 1,"omitnan");
 volumeMA(isnan(volumeMA)) = 0;
-signalVolumeMA = volumeMA > liquidityVolumeMAThreshold;
-signalVolumeMABuffer = movmax(signalVolumeMA, [liquidityVolumeMANDayBuffer , 0], 1);
+signalVolume = volume.Variables > (volumeMA*liquidityVolumeMAThreshold);
+signalVolumeMABuffer = movmax(signalVolume, [liquidityVolumeMANDayBuffer , 0], 1,"omitnan");
 
-clear volumeMA signalVolumeMA
+clear volumeMA signalVolume
 
 %check
-a = sum(signalVolumeMABuffer,2);
+% a = sum(signalVolumeMABuffer,2);
 % b = max(a)
 % c = sum(a)
 %-----------------------------------------------------------------------------------------
@@ -130,15 +130,15 @@ liquidityValueMAThreshold;
 liquidityValueMANDayBuffer ;
 
 valueVar = volume.Variables .* closePrice.Variables;
-valueMA = movmean(valueVar, [liquidityValueMALookback, 0], 1);
+valueMA = movmean(valueVar, [liquidityValueMALookback, 0], 1,"omitnan");
 valueMA(isnan(valueMA)) = 0;
 SignalvalueMA = valueMA > liquidityValueMAThreshold;
-SignalvalueMABuffer =  movmax(SignalvalueMA, [liquidityValueMANDayBuffer, 0], 1);
+SignalvalueMABuffer =  movmax(SignalvalueMA, [liquidityValueMANDayBuffer, 0], 1,"omitnan");
 
 clear valueMA SignalvalueMA valueVar
 
 %check
-a = sum(SignalvalueMABuffer,2);
+% a = sum(SignalvalueMABuffer,2);
 % b = max(a)
 % c = sum(a)
 %-----------------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ a = sum(SignalvalueMABuffer,2);
 liquidityNDayVolumeValueBuffer;
 
 signalVolumeValue = signalVolumeMABuffer .* SignalvalueMABuffer;
-signalVolumeValueBuffer = movmax(signalVolumeValue, [liquidityNDayVolumeValueBuffer, 0], 1) ;
+signalVolumeValueBuffer = movmax(signalVolumeValue, [liquidityNDayVolumeValueBuffer, 0], 1,"omitnan") ;
 
 clear signalVolumeValue
 
@@ -162,9 +162,9 @@ clear signalVolumeValue
 %% momentum closePrice MA
 momentumPriceMALookback;
 momentumPriceMAToCloseThreshold;
-closePriceMA = movmean(closePrice.Variables, [momentumPriceMALookback, 0], 1);
+closePriceMA = movmean(closePrice.Variables, [momentumPriceMALookback, 0], 1,"omitnan");
 closePriceMA(isnan(closePriceMA)) = 0;
-signalClosePriceMA =  closePrice.Variables > closePriceMA;
+signalClosePriceMA =  closePrice.Variables > momentumPriceMAToCloseThreshold*closePriceMA;
 
 clear closePriceMA
 
@@ -187,7 +187,7 @@ lowToClosePriceRet(isnan(lowToClosePriceRet)) = 0;
 
 signalLowToClose = lowToClosePriceRet > momentumPriceRetLowToCloseThreshold;
 signalLowToCloseNDayBuffer = movmax(signalLowToClose,...
-                            [momentumPriceRetLowToCloseNDayBuffer, 0], 1);
+    [momentumPriceRetLowToCloseNDayBuffer, 0], 1,"omitnan");
 
 clear lowPriceShifted lowToClosePriceRet signalLowToClose
 
@@ -200,12 +200,12 @@ clear lowPriceShifted lowToClosePriceRet signalLowToClose
 
 %% combine liquidity and momentum signal
 signalLliquidityMomentum = signalVolumeValueBuffer .*...
-                        (signalClosePriceMA .* signalLowToCloseNDayBuffer);
+    (signalClosePriceMA .* signalLowToCloseNDayBuffer);
 
-% signal buffer on liquidity and momentum 
+% signal buffer on liquidity and momentum
 liquidityMomentumSignalBuffer;
 signalLiquidityMomentumBuffer = movmax(signalLliquidityMomentum,...
-                                [liquidityMomentumSignalBuffer, 0], 1) ;
+    [liquidityMomentumSignalBuffer, 0], 1,"omitnan") ;
 
 %check
 % a = sum(signalLiquidityMomentumBuffer,2);
@@ -218,7 +218,7 @@ signalLiquidityMomentumBuffer = movmax(signalLliquidityMomentum,...
 cutLossHighToCloseNDayLookback ;
 cutLossHighToCloseMaxPct ;
 
-lastHighPrice = movmax(highPrice.Variables, [cutLossHighToCloseNDayLookback, 0], 1);
+lastHighPrice = movmax(highPrice.Variables, [cutLossHighToCloseNDayLookback, 0], 1,"omitnan");
 lastHighToLastClosePriceRet = (closePrice.Variables ./ lastHighPrice) - 1;
 lastHighToLastClosePriceRet(isnan(lastHighToLastClosePriceRet)) = 0;
 cutLossSignal = lastHighToLastClosePriceRet > (-cutLossHighToCloseMaxPct) ;
@@ -249,15 +249,15 @@ signalNDayBackShifted = backShiftFcn(signalCombineLiquidityMomentumCutLoss, nDay
 %------------------------------------------------------------------------------------------
 
 
-%% warm up no-signal 
+%% warm up no-signal
 warmUpPeriod = [
-                liquidityVolumeMALookback
-                liquidityValueMALookback    
-                momentumPriceMALookback
-                momentumPriceRetLowToCloseLookback
-                cutLossHighToCloseNDayLookback
-                nDayBackShift
-                ];
+    liquidityVolumeMALookback
+    liquidityValueMALookback
+    momentumPriceMALookback
+    momentumPriceRetLowToCloseLookback
+    cutLossHighToCloseNDayLookback
+    nDayBackShift
+    ];
 warmUpPeriodMax = max(warmUpPeriod);
 FinalSignal = signalNDayBackShifted;
 FinalSignal(1:warmUpPeriodMax,:) = 0;
