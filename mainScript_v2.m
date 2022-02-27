@@ -42,7 +42,7 @@ tClassifyMCap = toc
 tic
 
 wfaTester.wfaSetUp.maxFcnEval = 840;
-wfaTester.wfaSetUp.nWalk = 1;
+wfaTester.wfaSetUp.nWalk = 50;
 wfaTester.wfaSetUp.nstepTest = 5;
 wfaTester.wfaSetUp.nstepTrain = 100;
 wfaTester.wfaSetUp.lookbackUB = 250;
@@ -112,14 +112,14 @@ tOptimParam = toc
 % nexttile
 % tradingSignalTrainSet = wfaOptimStructOut.tradingSignalTrainSet;
 % nDailyTradingSignalTrain = sum(tradingSignalTrainSet.Variables,2);
-% trainBar = bar(tradingSignalTrainSet.Time, nDailyTradingSignalTrain);
+% trainBar = bar(nDailyTradingSignalTrain);
 % title("nDailyTradingSignalTrain")
 % 
 % %tile [2,2]
 % nexttile
 % tradingSignalTestSet = wfaOptimStructOut.tradingSignalTestSet;
 % nDailyTradingSignalTest = sum(tradingSignalTestSet.Variables,2);
-% testBar = bar(tradingSignalTestSet.Time, nDailyTradingSignalTest);
+% testBar = bar(nDailyTradingSignalTest);
 % title("nDailyTradingSignalTest")
 % 
 % maxDDTrainSet = maxdrawdown(equityCurvePortfolioTrain.Variables);
