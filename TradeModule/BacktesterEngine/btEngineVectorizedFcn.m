@@ -81,6 +81,8 @@ function resultStruct = btEngineVectorizedFcn (dataStructInput, tradingSignal, t
     signalVarString = string(signalVar);
     signalVar = double(signalVarString);
     signalVar(isnan(signalVar)) = 0;
+
+    clearvars openPriceVarString closePriceVarString signalVarString 
     %--------------------------------------------------------------------------------------
     
     % calculate number of asset with signal to buy

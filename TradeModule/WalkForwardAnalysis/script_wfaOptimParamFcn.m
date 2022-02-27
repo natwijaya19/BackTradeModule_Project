@@ -5,7 +5,6 @@ tic
 % Input arguments
 % - dataInput contains timetables of openPrice, highPrice, lowPrice, closePrice, volume and mktCapCategory
 % - wfaSetUpParam
-% -
 
 % Output arguments:
 % A struct containing tables of :
@@ -195,13 +194,13 @@ exitflagAtTrainData = timetable('Size', sz, 'VariableTypes', varTypes,...
 %% do walk-forwad
 nMktCap = numel(uniqueMktCap);
 
-% prepare for waitbarFig
-msg = "Please wait. Optimizing parameter for walk forward analysis";
-waitbarFig = waitbar(0,msg);
+% % prepare for waitbarFig
+% msg = "Please wait. Optimizing parameter for walk forward analysis";
+% waitbarFig = waitbar(0,msg);
 timeColDataInput = dataInput.openPrice.Time;
 % optimParam for each walk
 nIteration = nWalk*nMktCap;
-for walkIdx = 15:nWalk
+for walkIdx = 1:nWalk
     % walkIdx =1
     % setUp lookbackIdx
     startLookbackIdx = startStepLookback(walkIdx);
@@ -220,9 +219,9 @@ for walkIdx = 15:nWalk
     % optimparam for each mCap
     for mCapIdx = 1: nMktCap
         % mCapIdx = 1
-        % show wait bar counting each walkIdx
-        progressCounter = (walkIdx*mCapIdx)/nIteration;
-        waitbar(progressCounter, waitbarFig, msg);
+%         % show wait bar counting each walkIdx
+%         progressCounter = (walkIdx*mCapIdx)/nIteration;
+%         waitbar(progressCounter, waitbarFig, msg);
 
         disp(strcat("walkIdx ",string(walkIdx)," | mCapIdx ",string(mCapIdx)," ",uniqueMktCap(mCapIdx)))
 

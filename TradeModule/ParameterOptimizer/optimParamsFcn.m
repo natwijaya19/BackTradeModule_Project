@@ -73,9 +73,9 @@ UB = LBUBConst(:,2)';
 %% setup optimization options
 options = optimoptions('surrogateopt','PlotFcn',"surrogateoptplot", ...
     "ConstraintTolerance",1e-2, "UseParallel", useParallel,...
-    "UseVectorized",false, "MaxFunctionEvaluations",maxFcnEval,"BatchUpdateInterval",N);
+    "UseVectorized",true, "BatchUpdateInterval", N, "MaxFunctionEvaluations", maxFcnEval);
 
-%
+% 
 %% call surrogateopt to solve the problem
 [sol,fval,exitflag,output] = surrogateopt(F,LB,UB,intConst,options) ;
 

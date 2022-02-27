@@ -41,14 +41,15 @@ tClassifyMCap = toc
 % setup the wfaParameters
 tic
 
+wfaTester.wfaSetUp.maxFcnEval = 780;
 wfaTester.wfaSetUp.nWalk = 16;
 wfaTester.wfaSetUp.nstepTest = 20;
-wfaTester.wfaSetUp.nstepTrain = 200;
+wfaTester.wfaSetUp.nstepTrain = 80;
 wfaTester.wfaSetUp.lookbackUB = 250;
-wfaTester.wfaSetUp.maxDDThreshold = -25/100;
+wfaTester.wfaSetUp.maxDDThreshold = -20/100;
 wfaTester.wfaSetUp.minPortRet = 1.2;
 wfaTester.wfaSetUp.minDailyRetThreshold = -35/100;
-wfaTester.wfaSetUp.minLast20DRetThreshold = -25/100;
+wfaTester.wfaSetUp.minLast20DRetThreshold = -20/100;
 wfaTester.wfaSetUp.minLast60DRetThreshold = -10/100;
 wfaTester.wfaSetUp.minLast200DRetThreshold = +0/100;
 
@@ -88,16 +89,45 @@ tOptimParam = toc
 %
 % Histogram: monthly and daily returns histogram
 %%
-% tiledlayout(2,1)
+% figure
+% tiledlayout(2,2)
+%
+% %tile [1,1]
 % nexttile
 % equityCurvePortfolioTrain = wfaOptimStructOut.btResultTrainSet.equityCurvePortfolioTT;
-% plot(equityCurvePortfolioTrain.Time, equityCurvePortfolioTrain.Variables)
-% title("equityCurvePortfolioTrain")
-% 
+% timeCol = equityCurvePortfolioTrain.Time;
+% trainPlot = semilogy(timeCol, equityCurvePortfolioTrain.Variables);
+% title("equityCurvePortfolioTrainSet")
+% % axis([timeCol(1) timeCol(end)])
+%
+% %tile [1,2]
 % nexttile
 % equityCurvePortfolioTest = wfaOptimStructOut.btResultTestSet.equityCurvePortfolioTT;
-% plot(equityCurvePortfolioTest.Time, equityCurvePortfolioTest.Variables)
-% title("equityCurvePortfolioTest")
+% timeCol = equityCurvePortfolioTest.Time;
+% testPlot = plot(timeCol , equityCurvePortfolioTest.Variables);
+% title("equityCurvePortfolioTestSet")
+% % axis([timeCol(1) timeCol(end)])
+%
+% %tile [2,1]
+% nexttile
+% tradingSignalTrainSet = wfaOptimStructOut.tradingSignalTrainSet;
+% nDailyTradingSignalTrain = sum(tradingSignalTrainSet.Variables,2);
+% trainBar = bar(tradingSignalTrainSet.Time, nDailyTradingSignalTrain);
+% title("nDailyTradingSignalTrain")
+%
+% %tile [2,2]
+% nexttile
+% tradingSignalTestSet = wfaOptimStructOut.tradingSignalTestSet;
+% nDailyTradingSignalTest = sum(tradingSignalTestSet.Variables,2);
+% testBar = bar(tradingSignalTestSet.Time, nDailyTradingSignalTest);
+% title("nDailyTradingSignalTest")
+
+%%
+
+% maxDDTrainSet = maxdrawdown(equityCurvePortfolioTrain.Variables);
+% maxDDTestSet = maxdrawdown(equityCurvePortfolioTest.Variables);
+
+%%
 %% save the results in matfile
 
 

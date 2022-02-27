@@ -14,11 +14,11 @@ classdef WFASetUpParam
         maxCapAllocation = 0.25;
 
         % optimization set up
-        maxFcnEval = 600;
+        maxFcnEval = 780;
 
         % nlConstParam
         maxDDThreshold = -15/100;
-        minPortRet = 1.15;
+        minPortRet = 1.2;
         minDailyRetThreshold = -35/100;
         minLast20DRetThreshold = -20/100;
         minLast60DRetThreshold = -15/100;
@@ -38,20 +38,20 @@ classdef WFASetUpParam
 
             obj.lbubConst = [            % open the array
                 40,  ubLookback;        % liquidityVolumeMALookback = paramInput(1);
-                10,  500;               % liquidityVolumeMAThreshold = paramInput(2) * % percentage from LB to UB
+                10,  400;               % liquidityVolumeMAThreshold = paramInput(2) * % percentage from LB to UB
                 1,  40;                 %liquidityVolumeMANDayBuffer = paramInput(3)
                 1,  ubLookback;        % liquidityValueMALookback  = paramInput(4);
                 1,  10^6;              % liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million
-                1,  40;             %liquidityValueMANDayBuffer = paramInput(6)
-                1,  40              % liquidityNDayVolumeValueBuffer = paramInput(7);
-                1,  30     % momentumPriceMALookback = paramInput(8);
-                40,  300            % momentumPriceMAToCloseThreshold = paramInput(9); % in percentage
+                1,  30;             %liquidityValueMANDayBuffer = paramInput(6)
+                1,  30              % liquidityNDayVolumeValueBuffer = paramInput(7);
+                1,  30          % momentumPriceMALookback = paramInput(8);
+                10, 300            % momentumPriceMAToCloseThreshold = paramInput(9); % in percentage
                 0,  20              % momentumPriceRetLowToCloseLookback = paramInput(10);
-                0,  100             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
-                1,  40              % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-                1,  40              % liquidityMomentumSignalBuffer = paramInput(13);
+                0,  50             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
+                1,  30              % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
+                1,  30              % liquidityMomentumSignalBuffer = paramInput(13);
                 1,  10            % cutLossHighToCloseNDayLookback = paramInput(14);
-                0,  10             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
+                0,  8             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
                 1,  1               % nDayBackShift = paramInput(16);
                 ] ;                 % close the array
 
