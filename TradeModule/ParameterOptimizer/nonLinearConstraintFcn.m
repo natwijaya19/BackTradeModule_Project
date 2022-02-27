@@ -62,6 +62,8 @@ maxDD = -maxdrawdown(equityCurvePortfolioVar);
 dailyRet = tick2ret(equityCurvePortfolioVar);
 dailyRet(isnan(dailyRet)) = 0;
 DailyRetMin = min(dailyRet);
+
+clearvars dataStructInput
 %------------------------------------------------------------------------
 
 %% Last 20 days return

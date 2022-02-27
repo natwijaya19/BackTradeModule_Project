@@ -34,24 +34,26 @@ useParallel = true;
 
 %% LB UB Constraints
 %     UBLookback = 250;
-%     LBUBConst = [                                     % open the array
-%                                 1,  UBLookback;        % liquidityVolumeMALookback = paramInput(1);
-%                                 0,  500;               % liquidityVolumeMAThreshold = paramInput(2);
-%                                 1,  UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(3)
-%                                 1,  UBLookback;        % liquidityValueMALookback  = paramInput(4);
-%                                 0,  500;              % liquidityValueeMAThreshold  = paramInput(5);
-%                                 1,  UBLookback;        %liquidityValueMANDayBuffer = paramInput(6)
-%                                 1,  UBLookback        % liquidityNDayVolumeValueBuffer = paramInput(7);
-%                                 1,  UBLookback     % momentumPriceMALookback = paramInput(8);
-%                                 0,  500            % momentumPriceMAToCloseThreshold = paramInput(9);
-%                                 1,  UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(10);
-%                                 0,  500             % momentumPriceRetLowToCloseThreshold = paramInput(11);
-%                                 1,  UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-%                                 1,  UBLookback      % liquidityMomentumSignalBuffer = paramInput(13);
-%                                 0,  UBLookback        % cutLossHighToCloseNDayLookback = paramInput(14);
-%                                 0,  500             % cutLossHighToCloseMaxPct = paramInput(15);
-%                                 1, 1               % nDayBackShift = paramInput(16);
-%                                                 ] ;  % close the array
+% LBUBConst = [       % open the array
+%     2,      10;       %liquidityVolumeShortMALookback = paramInput(1);
+%     100,    UBLookback;        %liquidityVolumeLongMALookback = paramInput(2);
+%     0,      500;               % liquidityVolumeMAThreshold = paramInput(3);
+%     1,      UBLookback;        %liquidityVolumeMANDayBuffer = paramInput(4)
+%     1,      UBLookback;        % liquidityValueMALookback  = paramInput(5);
+%     0,      500;              % liquidityValueeMAThreshold  = paramInput(6);
+%     1,      UBLookback;        %liquidityValueMANDayBuffer = paramInput(7)
+%     1,      UBLookback        % liquidityNDayVolumeValueBuffer = paramInput(8);
+%     1,      UBLookback     % momentumPriceMALookback = paramInput(9);
+%     0,      500            % momentumPriceMAToCloseThreshold = paramInput(10);
+%     1,      UBLookback       % momentumPriceRetLowToCloseLookback = paramInput(11);
+%     0,      500             % momentumPriceRetLowToCloseThreshold = paramInput(12);
+%     1,      UBLookback     % momentumPriceRetLowToCloseNDayBuffer = paramInput(13);
+%     1,      UBLookback      % liquidityMomentumSignalBuffer = paramInput(14);
+%     0,      UBLookback        % cutLossHighToCloseNDayLookback = paramInput(15);
+%     0,      500             % cutLossHighToCloseMaxPct = paramInput(16);
+%     1,      1               % nDayBackShift = paramInput(17);
+%     ] ;  % close the array
+
 
 %% define function handle of objectiveFcn and nonLinearConstraintFcn
 
@@ -65,7 +67,7 @@ objconstr = packfcn(obj,nlconst) ;
 F = objconstr ;
 
 %% define other constrains
-nVars = 16;
+nVars = 17;
 intConst = 1:nVars;
 LB = LBUBConst(:,1)';
 UB = LBUBConst(:,2)';

@@ -124,7 +124,8 @@ tradingSignalTestSet.Properties.VariableNames = strrep(tradingSignalTestSet.Prop
 
 %% preallocate optimizedSignalParam for each startTrainStepIdx and marketCapCategory
 tradingSignalParamVarName = [
-    "liquidityVolumeMALookback";
+    "liquidityVolumeShortMALookback"
+    "liquidityVolumeLongMALookback";
     "liquidityVolumeMAThreshold";
     "liquidityVolumeMANDayBuffer";
     "liquidityValueMALookback";
@@ -195,11 +196,12 @@ exitflagAtTrainData = timetable('Size', sz, 'VariableTypes', varTypes,...
 nMktCap = numel(uniqueMktCap);
 
 % % prepare for waitbarFig
-% msg = "Please wait. Optimizing parameter for walk forward analysis";
-% waitbarFig = waitbar(0,msg);
+msg = "Please wait. Optimizing parameter for walk forward analysis";
+waitbarFig = waitbar(0,msg);
 timeColDataInput = dataInput.openPrice.Time;
 % optimParam for each walk
 nIteration = nWalk*nMktCap;
+
 for walkIdx = 1:nWalk
     % walkIdx =1
     % setUp lookbackIdx
@@ -219,11 +221,14 @@ for walkIdx = 1:nWalk
     % optimparam for each mCap
     for mCapIdx = 1: nMktCap
         % mCapIdx = 1
-%         % show wait bar counting each walkIdx
-%         progressCounter = (walkIdx*mCapIdx)/nIteration;
-%         waitbar(progressCounter, waitbarFig, msg);
+        % show wait bar counting each walkIdx
+        progressCounter = (mCapIdx + nMktCap*(walkIdx-1))/nIteration;
+        waitbar(progressCounter, waitbarFig, msg);
 
-        disp(strcat("walkIdx ",string(walkIdx)," | mCapIdx ",string(mCapIdx)," ",uniqueMktCap(mCapIdx)))
+        textToDisplay = strcat("walkIdx ",string(walkIdx)," | mCapIdx ",...
+            string(mCapIdx)," ",uniqueMktCap(mCapIdx),...
+            " -- start=",string(timeColTrainWalkIdx(1)), " end=",string(timeColTrainWalkIdx(end)));
+        disp(textToDisplay)
 
         %setUp list of symbols for each mktCap category in each walkIdx
         mCapIdxAtWalkIdx = mCapEndStepTrainIdxVar(walkIdx, :) == uniqueMktCap(mCapIdx);
@@ -246,13 +251,13 @@ for walkIdx = 1:nWalk
         dataInputTrain.volume = dataInput.volume(timeColTrainWalkIdx,volumeVarName);
 
 
-        % clean dataInput 
+        % clean dataInput
         priceVolumeRaw = dataInputTrain;
         priceVolumeClean = cleanDataFcn (priceVolumeRaw);
 
         % transfer the dataInput
         dataStructInput = priceVolumeClean;
-        clearvars priceVolumeRaw priceVolumeClean
+        clearvars priceVolumeRaw priceVolumeClean dataInputTrain
         %--------------------------------------------------------------------
 
         optimStructOut = optimParamsFcn (dataStructInput, optimLookbackStep,...
@@ -285,6 +290,7 @@ for walkIdx = 1:nWalk
         timeColSignalTrain = timeColTrainWalkIdx(end-nstepTrain+1:end,:);
         tradingSignalTrainSet(timeColSignalTrain,SymInMCapIdxWalkIdx) = tradingSignalTrainOut(timeColSignalTrain,:);
 
+        clearvars dataStructInput
         %-------------------------------------------------------------------------
 
         % apply the optimizedTradingParam to generateSignal on test dataset
@@ -307,6 +313,9 @@ for walkIdx = 1:nWalk
         timeColSignalTest = timeColTestWalkIdx(end-nstepTest+1:end,:);
         tradingSignalTestSet(timeColSignalTest,SymInMCapIdxWalkIdx) = tradingSignalTTOut(timeColSignalTest,:);
 
+        clearvars dataInputTest
+        %------------------------------------------------------------------
+
     end
 
 end
@@ -326,6 +335,7 @@ dataInputTrainSetClean = cleanDataFcn (dataInputTrainSet);
 btResultTrainSet = btEngineVectorizedFcn(dataInputTrainSetClean, tradingSignalTrainSet,...
     tradingCost, maxCapAllocation);
 
+clearvars dataInputTrainSet dataInputTrainSetClean
 %-----------------------------------------------------------------------
 
 %% backtest on the test dataset
@@ -342,6 +352,7 @@ dataInputTestSetClean = cleanDataFcn (dataInputTestSet);
 btResultTestSet = btEngineVectorizedFcn(dataInputTestSetClean, tradingSignalTestSet,...
     tradingCost, maxCapAllocation);
 
+clearvars dataInputTestSet dataInputTestSetClean
 
 %% wrap up the results
 wfaOptimStructOut.optimTradingSignalParam = optimTradingSignalParam;
@@ -354,11 +365,17 @@ wfaOptimStructOut.tradingSignalTestSet = tradingSignalTestSet;
 wfaOptimStructOut.tradingSignalTrainSet = tradingSignalTrainSet;
 wfaOptimStructOut.wfaSetUpParam = wfaSetUpParam;
 
-%% 
+%%
 path = pwd;
-fileName = 'DataOutput\OptimizedParameters\wfaOptimStructOut_20220227.mat';
-fullFileName = fullfile(path,fileName);
+detailPath = 'DataOutput\OptimizedParameters\';
+fileName = '50Walk100Train5Test_wfaOptimStructOut_';
+dateName = string(datetime('today'));
+fileFormat = '.mat';
+fullName = strcat(fileName,dateName, fileFormat);
+fullFileName = fullfile(path, detailPath, fullName);
+
 save(fullFileName, 'wfaOptimStructOut');
+
 %% =========================================================================
 
 % cleanvars -except wfaOptimStructOut

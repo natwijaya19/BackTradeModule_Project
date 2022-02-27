@@ -14,7 +14,7 @@ classdef WFASetUpParam
         maxCapAllocation = 0.25;
 
         % optimization set up
-        maxFcnEval = 780;
+        maxFcnEval = 840;
 
         % nlConstParam
         maxDDThreshold = -15/100;
@@ -37,25 +37,24 @@ classdef WFASetUpParam
             ubLookback = obj.lookbackUB;
 
             obj.lbubConst = [            % open the array
-                40,  ubLookback;        % liquidityVolumeMALookback = paramInput(1);
-                10,  400;               % liquidityVolumeMAThreshold = paramInput(2) * % percentage from LB to UB
-                1,  40;                 %liquidityVolumeMANDayBuffer = paramInput(3)
-                1,  ubLookback;        % liquidityValueMALookback  = paramInput(4);
-                1,  10^6;              % liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million
-                1,  30;             %liquidityValueMANDayBuffer = paramInput(6)
-                1,  30              % liquidityNDayVolumeValueBuffer = paramInput(7);
-                1,  30          % momentumPriceMALookback = paramInput(8);
-                10, 300            % momentumPriceMAToCloseThreshold = paramInput(9); % in percentage
-                0,  20              % momentumPriceRetLowToCloseLookback = paramInput(10);
-                0,  50             % momentumPriceRetLowToCloseThreshold = paramInput(11); % in percentage
-                1,  30              % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-                1,  30              % liquidityMomentumSignalBuffer = paramInput(13);
-                1,  10            % cutLossHighToCloseNDayLookback = paramInput(14);
-                0,  8             % cutLossHighToCloseMaxPct = paramInput(15); % in percentage
-                1,  1               % nDayBackShift = paramInput(16);
+                5,  10;              %liquidityVolumeShortMALookback = paramInput(1);
+                200, ubLookback;      %liquidityVolumeLongMALookback = paramInput(2);
+                10,  400;               % liquidityVolumeMAThreshold = paramInput(3) * % percentage short MA to long MA
+                1,  40;                 %liquidityVolumeMANDayBuffer = paramInput(4)
+                1,  ubLookback;        % liquidityValueMALookback  = paramInput(5);
+                1,  10^6;              % liquidityValueMAThreshold  = paramInput(6)* 10^6; % multiplication of Rp 1 million
+                1,  30;             %liquidityValueMANDayBuffer = paramInput(7)
+                1,  30              % liquidityNDayVolumeValueBuffer = paramInput(8);
+                1,  30          % momentumPriceMALookback = paramInput(9);
+                10, 400            % momentumPriceMAToCloseThreshold = paramInput(10); % in percentage
+                0,  10              % momentumPriceRetLowToCloseLookback = paramInput(11);
+                0,  50             % momentumPriceRetLowToCloseThreshold = paramInput(12); % in percentage
+                1,  20              % momentumPriceRetLowToCloseNDayBuffer = paramInput(13);
+                1,  20              % liquidityMomentumSignalBuffer = paramInput(14);
+                1,  10            % cutLossHighToCloseNDayLookback = paramInput(15);
+                0,  10             % cutLossHighToCloseMaxPct = paramInput(16); % in percentage
+                1,  2               % nDayBackShift = paramInput(17);
                 ] ;                 % close the array
-
-
 
         end
     end

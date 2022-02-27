@@ -6,24 +6,24 @@ function tradingSignalTTOut = generateTradingSignalFcn (dataInput, tradingSignal
 %
 % Input arguments:
 %
-% dataInput struct - consist of openPrice, highPrice, lowPrice,
-%                       closePrice, volume.
-% liquidityVolumeMALookback
-% liquidityVolumeMAThreshold
-% liquidityVolumeMANDayBuffer
-% liquidityValueMALookback
-% liquidityValueMAThreshold
-% liquidityValueMANDayBuffer
-% liquidityNDayVolumeValueBuffer
-% momentumPriceMALookback
-% momentumPriceMAToCloseThreshold
-% momentumPriceRetLowToCloseLookback
-% momentumPriceRetLowToCloseThreshold
-% momentumPriceRetLowToCloseNDayBuffer
-% liquidityMomentumSignalBuffer
-% cutLossHighToCloseNDayLookback
-% cutLossHighToCloseMaxPct
-% nDayBackShift
+% dataInput struct - consist of openPrice, highPrice, lowPrice, closePrice, volume.
+% liquidityVolumeShortMALookback = paramInput(1);
+% liquidityVolumeLongMALookback = paramInput(2);
+% liquidityVolumeMAThreshold = paramInput(3) / 100 ; % percentage from LB to UB
+% liquidityVolumeMANDayBuffer = paramInput(4);
+% liquidityValueMALookback  = paramInput(5);
+% liquidityValueMAThreshold  = paramInput(6)* 10^6; % multiplication of Rp 1 million
+% liquidityValueMANDayBuffer = paramInput(7);
+% liquidityNDayVolumeValueBuffer = paramInput(8);
+% momentumPriceMALookback = paramInput(9);
+% momentumPriceMAToCloseThreshold = paramInput(10) / 100; % in percentage
+% momentumPriceRetLowToCloseLookback = paramInput(11);
+% momentumPriceRetLowToCloseThreshold = paramInput(12) / 100; % in percentage
+% momentumPriceRetLowToCloseNDayBuffer = paramInput(13);
+% liquidityMomentumSignalBuffer = paramInput(14);
+% cutLossHighToCloseNDayLookback = paramInput(15);
+% cutLossHighToCloseMaxPct = paramInput(16) / 100; % in percentage
+% nDayBackShift = paramInput(17) ;
 
 % preparation
 %======================================================================================
@@ -41,48 +41,51 @@ lowPrice = dataInput.lowPrice;
 closePrice = dataInput.closePrice;
 volume = dataInput.volume;
 
+clearvars dataInput
 
 %% parameter preparation
 %---------------------------------------------------------------------------
 % sample
-% tradingSignalParameter =[               % open the array
-%                             80        % liquidityVolumeMALookback = paramInput(1);
-%                             0.1        % liquidityVolumeMAThreshold = paramInput(2);
-%                             3       %liquidityVolumeMANDayBuffer = paramInput(3)
-%                             80        % liquidityValueMALookback  = paramInput(4);
-%                             0.1        % liquidityValueeMAThreshold  = paramInput(5);
-%                             3       %liquidityValueMANDayBuffer = paramInput(6)
-%                             20        % liquidityNDayVolumeValueBuffer = paramInput(7);
-%                             20        % momentumPriceMALookback = paramInput(8);
-%                             1.2        % momentumPriceMAToCloseThreshold = paramInput(9);
-%                             1        % momentumPriceRetLowToCloseLookback = paramInput(10);
-%                             0.05        % momentumPriceRetLowToCloseThreshold = paramInput(11);
-%                             3        % momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-%                             5        % liquidityMomentumSignalBuffer = paramInput(13);
-%                             5        % cutLossHighToCloseNDayLookback = paramInput(14);
-%                             0.05        % cutLossHighToCloseMaxPct = paramInput(15);
-%                             1        % nDayBackShift = paramInput(16);
+% tradingSignalParameter =[             % open the array
+%                             5         %liquidityVolumeShortMALookback = paramInput(1);
+%                             80        % liquidityVolumeMALookback = paramInput(2);
+%                             0.1        % liquidityVolumeMAThreshold = paramInput(3);
+%                             3       %liquidityVolumeMANDayBuffer = paramInput(4)
+%                             80        % liquidityValueMALookback  = paramInput(5);
+%                             0.1        % liquidityValueeMAThreshold  = paramInput(6);
+%                             3       %liquidityValueMANDayBuffer = paramInput(7)
+%                             20        % liquidityNDayVolumeValueBuffer = paramInput(8);
+%                             20        % momentumPriceMALookback = paramInput(9);
+%                             1.2        % momentumPriceMAToCloseThreshold = paramInput(10);
+%                             1        % momentumPriceRetLowToCloseLookback = paramInput(11);
+%                             0.05        % momentumPriceRetLowToCloseThreshold = paramInput(12);
+%                             3        % momentumPriceRetLowToCloseNDayBuffer = paramInput(13);
+%                             5        % liquidityMomentumSignalBuffer = paramInput(14);
+%                             5        % cutLossHighToCloseNDayLookback = paramInput(15);
+%                             0.05        % cutLossHighToCloseMaxPct = paramInput(16);
+%                             1        % nDayBackShift = paramInput(17);
 %                                 ] ;  % close the array
 %---------------------------------------------------------------------------
 %% parameter preparation
 paramInput = tradingSignalParameter; % param array transfer
 
-liquidityVolumeMALookback = paramInput(1);
-liquidityVolumeMAThreshold = paramInput(2) / 100 ; % percentage from LB to UB
-liquidityVolumeMANDayBuffer = paramInput(3);
-liquidityValueMALookback  = paramInput(4);
-liquidityValueMAThreshold  = paramInput(5)* 10^6; % multiplication of Rp 1 million
-liquidityValueMANDayBuffer = paramInput(6);
-liquidityNDayVolumeValueBuffer = paramInput(7);
-momentumPriceMALookback = paramInput(8);
-momentumPriceMAToCloseThreshold = paramInput(9) / 100; % in percentage
-momentumPriceRetLowToCloseLookback = paramInput(10);
-momentumPriceRetLowToCloseThreshold = paramInput(11) / 100; % in percentage
-momentumPriceRetLowToCloseNDayBuffer = paramInput(12);
-liquidityMomentumSignalBuffer = paramInput(13);
-cutLossHighToCloseNDayLookback = paramInput(14);
-cutLossHighToCloseMaxPct = paramInput(15) / 100; % in percentage
-nDayBackShift = paramInput(16) ;
+liquidityVolumeShortMALookback = paramInput(1);
+liquidityVolumeLongMALookback = paramInput(2);
+liquidityVolumeMAThreshold = paramInput(3) / 100 ; % percentage from LB to UB
+liquidityVolumeMANDayBuffer = paramInput(4);
+liquidityValueMALookback  = paramInput(5);
+liquidityValueMAThreshold  = paramInput(6)* 10^6; % multiplication of Rp 1 million
+liquidityValueMANDayBuffer = paramInput(7);
+liquidityNDayVolumeValueBuffer = paramInput(8);
+momentumPriceMALookback = paramInput(9);
+momentumPriceMAToCloseThreshold = paramInput(10) / 100; % in percentage
+momentumPriceRetLowToCloseLookback = paramInput(11);
+momentumPriceRetLowToCloseThreshold = paramInput(12) / 100; % in percentage
+momentumPriceRetLowToCloseNDayBuffer = paramInput(13);
+liquidityMomentumSignalBuffer = paramInput(14);
+cutLossHighToCloseNDayLookback = paramInput(15);
+cutLossHighToCloseMaxPct = paramInput(16) / 100; % in percentage
+nDayBackShift = paramInput(17) ;
 
 %-----------------------------------------------------------------------------------------
 
@@ -108,12 +111,17 @@ end
 
 
 %% liquidity on volume signal
-liquidityVolumeMALookback;
+
+liquidityVolumeShortMALookback ;
+liquidityVolumeLongMALookback ;
 liquidityVolumeMAThreshold;
 liquidityVolumeMANDayBuffer;
-volumeMA = movmean(volume.Variables, [liquidityValueMALookback, 0], 1,"omitnan");
-volumeMA(isnan(volumeMA)) = 0;
-signalVolume = volume.Variables > (volumeMA*liquidityVolumeMAThreshold);
+volumeShortMA = movmean(volume.Variables, [liquidityVolumeShortMALookback, 0], 1,"omitnan");
+volumeLongMA = movmean(volume.Variables, [liquidityVolumeLongMALookback, 0], 1,"omitnan");
+volumeShortMA(isnan(volumeShortMA)) = 0;
+volumeLongMA(isnan(volumeLongMA)) = 0;
+
+signalVolume = volumeShortMA > (volumeLongMA*liquidityVolumeMAThreshold);
 signalVolumeMABuffer = movmax(signalVolume, [liquidityVolumeMANDayBuffer , 0], 1,"omitnan");
 
 clear volumeMA signalVolume
@@ -251,13 +259,14 @@ signalNDayBackShifted = backShiftFcn(signalCombineLiquidityMomentumCutLoss, nDay
 
 %% warm up no-signal
 warmUpPeriod = [
-    liquidityVolumeMALookback
+    liquidityVolumeLongMALookback
     liquidityValueMALookback
     momentumPriceMALookback
     momentumPriceRetLowToCloseLookback
     cutLossHighToCloseNDayLookback
     nDayBackShift
     ];
+
 warmUpPeriodMax = max(warmUpPeriod);
 FinalSignal = signalNDayBackShifted;
 FinalSignal(1:warmUpPeriodMax,:) = 0;
