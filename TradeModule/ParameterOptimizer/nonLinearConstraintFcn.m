@@ -41,7 +41,7 @@ tradingSignalOut = generateTradingSignalFcn (dataStructInput, tradingSignalParam
 
 % backtest the signal against the price
 tradingSignalIn = tradingSignalOut;
-resultStruct = btEngineVectorizedFcn (dataStructInput, tradingSignalIn,...
+resultStruct = btEngineVectFcn (dataStructInput, tradingSignalIn,...
     tradingCost, maxCapAllocation);
 
 % calculate equityCurve at for the evaluation

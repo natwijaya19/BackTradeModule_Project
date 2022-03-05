@@ -1,328 +1,117 @@
-function priceVolumeClean = cleanDataFcn (priceVolumeRaw)
-% cleandataFcn is function to preprocess data
-%
-% Preprocessing steps:
-%   - Rearrange symbol alphabetically
-%   - Substitute and change non numeric data to numeric
-%   - Fill missing data with the previous and next in timeseries data
-%   - Remove symbols or data column containing price changes larger than ARA & ARB limit
-%
-%% Preprocessing
-% Transfer data
-openPriceTT = priceVolumeRaw.openPrice;
-highPriceTT = priceVolumeRaw.highPrice;
-lowpPiceTT = priceVolumeRaw.lowPrice;
-closePriceTT = priceVolumeRaw.closePrice;
-volumeTT = priceVolumeRaw.volume;
+function dataClean = cleanDataFcn(dataRaw)
 
-% take only timeseries data based on the symbolsRef based
+%% rearrange data based on symbols alphabetcicaly
+dataSortIn = dataRaw;
+nData = numel(dataSortIn);  % n price data only excluding volume
+dataSortOut = cell(1,nData);
+for idx = 1:nData
+    symbols = dataSortIn{idx}.Properties.VariableNames;
+    symbols = string(symbols);
+    symbols = sort(symbols,2,"ascend");
+    dataSortOut{idx} = dataSortIn{idx}(:,symbols);
+end
 
-% number of symbol
-symList = strrep(openPriceTT.Properties.VariableNames, "_open", "");
-symList = sort(string(symList), "ascend");
-nSym = numel (symList) ;
+%======================================================================
+%% fillmissing data
 
-symListOpenPrice = strcat(symList,"_open");
-symListHighPrice = strcat(symList,"_high");
-symListLowPrice = strcat(symList,"_low");
-symListClosePrice = strcat(symList,"_close");
-symListvolume = strcat(symList,"_volume");
+dataStrDblInput = dataSortOut;
 
-%% Rearrange symbol alphabetcicaly
-%--------------------------------------------------------------------------
-% openprice
-openPriceTT = openPriceTT(:,symListOpenPrice) ;
+% convert data to string and to double
+nData = numel(dataStrDblInput);
 
-% highprice
-highPriceTT = highPriceTT(:,symListHighPrice) ;
+dataStrDblOut = dataStrDblInput;
+for idx = 1:nData
+    varStr = string(dataStrDblInput{idx}.Variables); % convert data to string
+    varDouble = double(varStr); % convert string data to dobule
+    dataStrDblOut{idx}.Variables = varDouble;
+end
 
-% lowprice
-lowpPiceTT = lowpPiceTT(:,symListLowPrice) ;
+% main fillmissing data routine
+dataFillInput = dataStrDblOut;
+nData = numel(dataFillInput);
+dataFillOut = dataFillInput;
 
-% closeprice
-closePriceTT = closePriceTT(:,symListClosePrice) ;
+% for price data (idx 1 to 4), fill missing data with previous and next data
+% for volume data, fill missing data with previous data
+for idx = 1:nData
 
-% volume
-volumeTT = volumeTT(:,symListvolume) ;
+    % fill zero with nan
+    dataVar = dataFillInput{idx}.Variables;
+    dataVar(dataVar==0) = nan;
 
-% put price volume data into struct
-priceVolumeStruct.openPrice = openPriceTT ;
-priceVolumeStruct.highPrice = highPriceTT;
-priceVolumeStruct.lowPrice = lowpPiceTT;
-priceVolumeStruct.closePrice = closePriceTT;
-priceVolumeStruct.volume = volumeTT;
+    % fill with prevous data
+    dataVar = fillmissing(dataVar,"previous");
 
+    % fill with next data only for price data(idx=1:4) and exclude volume data (idx=5)
+    validIF = idx ~= 5;
+    if validIF
+        dataVar = fillmissing(dataVar,"next");
+    end
 
-%% Substitute and change non numeric data to numeric
-%--------------------------------------------------------------------------
-[priceVolumeNumerStruct] = convertToNumericFcn(priceVolumeStruct,...
-    symList);
+    if idx == 5
+        dataVar (isnan(dataVar)) = 0;
+    end
 
-%% Fill missing data with the previous and next in timeseries data
-%--------------------------------------------------------------------------
-priceVolumeStruct = priceVolumeNumerStruct;
-
-[priceVolumeFilledStruct]...
-    = fillMissingFcn(priceVolumeStruct);
-
-
-%% cleanPriceChangeLimitFcn to remove price changes beyond ARB and ARA limit
-%--------------------------------------------------------------------------
-
-% transfer variable value
-priceVolumeStruct = priceVolumeFilledStruct;
-
-[openpriceCleanTT, highpriceCleanTT, lowpriceCleanTT, closepriceCleanTT,...
-    volumeCleanTT] = cleanPriceChangeLimitFcn(priceVolumeStruct);
-
-
-%% Transfer ARA and ARB error-free dataset into struct output
-%--------------------------------------------------------------------------
-priceVolumeClean.openPrice= openpriceCleanTT ;
-priceVolumeClean.highPrice = highpriceCleanTT ;
-priceVolumeClean.lowPrice = lowpriceCleanTT ;
-priceVolumeClean.closePrice = closepriceCleanTT ;
-priceVolumeClean.volume = volumeCleanTT ;
-
-% Remove non-output variables
-clearvars -except priceVolumeClean
-
+    
+    % fill nan with zero
+    dataVar(isnan(dataVar)) = 0;
+    
+    % transfer data for output
+    dataFillOut{idx}.Variables = dataVar;
 
 end
 
-%% Helper local function
-%=========================================================================
+%======================================================================
+%% fill data column containing priceRetLimit ARA & ARB error with zero
+% define priceRetLimit
+priceRetLimit = 35/100;
+
+% prepare data
+dataPriceLimInput = dataFillOut;
+dataPriceLimOutput = dataPriceLimInput;
+
+% calc closePriceRet
+closePriceRet = tick2ret(dataPriceLimInput{4});
+closePriceRetVar = closePriceRet.Variables;
+
+% Identify symbols with daily ret higher than ARA limit
+priceRetHigherARA = closePriceRetVar > priceRetLimit;
+sumIndexHigherARA = sum(priceRetHigherARA,1);
+indexHigherARA = sumIndexHigherARA > 0;
 
 
-%% fillMissingFcn
-function [priceVolumeFilledStruct] = fillMissingFcn(...
-    priceVolumeStruct)
+% Identify symbols with daily ret lower than ARB limit
+priceRetHigherARB = closePriceRetVar < -priceRetLimit;
+sumindexLowerARB = sum(priceRetHigherARB,1);
+indexLowerARB = sumindexLowerARB > 0;
 
-% data preparation
-% transfer variable value
-openPrice = priceVolumeStruct.openPrice;
-highPrice = priceVolumeStruct.highPrice;
-lowPrice = priceVolumeStruct.lowPrice;
-closePrice = priceVolumeStruct.closePrice;
-volume = priceVolumeStruct.volume;
+% main routine:fill data column containing priceRetLimit
+% ARA & ARB error with zero
 
-% DO NOT Delete: convert all variables into numeric via this stage:
-% - let say A is raw data
-% - convert to string B = string(A)
-% - convert to double C = double (B)
-% - if C is price data, fill zero data with nan >> C(C==0) = nan
-% - if C is volume data, fill nan with 0 >> C(isnan(C)) = 0
+combinedMarker = indexHigherARA + indexLowerARB;
+indexPriceLimitError = combinedMarker > 0;
+nData = numel(dataPriceLimInput);
 
-% convert all raw data to string
-openPriceVar = string(openPrice.Variables);
-highPriceVar = string(highPrice.Variables);
-lowPriceVar = string(lowPrice.Variables);
-closePriceVar = string(closePrice.Variables);
-volumeVar = string(volume.Variables);
-
-% convert string to double
-openPriceVar = double(openPriceVar);
-highPriceVar = double(highPriceVar);
-lowPriceVar = double(lowPriceVar);
-closePriceVar = double(closePriceVar);
-volumeVar = double(volumeVar);
-
-% for price data, fill zero with nan
-openPriceVar(openPriceVar == 0) = nan;
-highPriceVar(highPriceVar == 0) = nan;
-lowPriceVar(lowPriceVar == 0) = nan;
-closePriceVar(closePriceVar == 0) = nan;
-volumeVar(volumeVar == 0) = nan;
-
-% transfer back the variables to TT
-openPrice.Variables = openPriceVar;
-highPrice.Variables = highPriceVar;
-lowPrice.Variables = lowPriceVar;
-closePrice.Variables = closePriceVar;
-volume.Variables = volumeVar;
-
-% start fill missing value
-
-% openprice
-openpriceFilledTT   = fillmissing(openPrice, "previous") ;
-openpriceFilledTT   = fillmissing(openpriceFilledTT, "next") ;
-
-% highprice
-highpriceFilledTT   = fillmissing(highPrice, "previous") ;
-highpriceFilledTT   = fillmissing(highpriceFilledTT, "next") ;
-
-% lowprice
-lowpriceFilledTT   = fillmissing(lowPrice, "previous") ;
-lowpriceFilledTT   = fillmissing(lowpriceFilledTT, "next") ;
-
-% closeprice
-closepriceFilledTT   = fillmissing(closePrice, "previous") ;
-closepriceFilledTT   = fillmissing(closepriceFilledTT, "next") ;
-
-% volume
-volumeFilledTT   = fillmissing(volume, "previous") ;
-% volumeFilledTT   = fillmissing(volumeFilledTT, "next") ;
-
-priceVolumeFilledStruct.openPrice = openpriceFilledTT;
-priceVolumeFilledStruct.highPrice = highpriceFilledTT;
-priceVolumeFilledStruct.lowPrice = lowpriceFilledTT;
-priceVolumeFilledStruct.closePrice = closepriceFilledTT;
-priceVolumeFilledStruct.volume = volumeFilledTT;
-
-clearvars -except priceVolumeFilledStruct
+for idx = 1:nData
+    dataVar = dataPriceLimOutput{idx}.Variables;
+    dataVar(:,indexPriceLimitError) = 0;
+    dataPriceLimOutput{idx}.Variables = dataVar;  
 end
 
-%% convertToNumericFcn
-function [priceVolumeNumerStruct]...
-    = convertToNumericFcn(priceVolumeStruct, symList)
-
-% transfer variable value
-openPriceTT = priceVolumeStruct.openPrice;
-highPriceTT = priceVolumeStruct.highPrice;
-lowPriceTT = priceVolumeStruct.lowPrice;
-closePriceTT = priceVolumeStruct.closePrice;
-volumeTT = priceVolumeStruct.volume;
-nSym = numel(symList);
-
-% preallocate
-nrows = length(openPriceTT.Time) ;
-TT1 = timetable(openPriceTT.Time, zeros(nrows,1)) ;
-TT = repmat(TT1,1,nSym) ; % Prealltocation
-
-% Preallocate openprice
-openPriceNumerTT = TT ;
-openPriceNumerTT.Properties.VariableNames = strcat(symList,"_open") ;
-
-% Preallocate highprice
-highPriceNumerTT = TT ;
-highPriceNumerTT.Properties.VariableNames = strcat(symList,"_high") ;
-
-% Preallocate lowprice
-lowPriceNumerTT = TT ;
-lowPriceNumerTT.Properties.VariableNames = strcat(symList,"_low") ;
-
-% Preallocate closeprice
-closePriceNumerTT = TT ;
-closePriceNumerTT.Properties.VariableNames = strcat(symList,"_close") ;
-
-% Preallocate volume
-volumeNumerTT = TT ;
-volumeNumerTT.Properties.VariableNames = strcat(symList,"_volume") ;
-
-%% transfer variables per symbol
-for idx = 1:nSym
-    %     idx = 63 % for test
-
-    idx;
-    sym_i = symList(idx) ;
-    openpriceSym_i  = openPriceTT(:,idx).Variables ;
-    highpriceSym_i  = highPriceTT(:,idx).Variables ;
-    lowpriceSym_i   = lowPriceTT(:,idx).Variables ;
-    closepriceSym_i = closePriceTT(:,idx).Variables ;
-    volumeSym_i     = volumeTT(:,idx).Variables ;
-
-    % convert to string
-    openpriceSym_i  = string(openpriceSym_i) ;
-    highpriceSym_i  = string(highpriceSym_i) ;
-    lowpriceSym_i   = string(lowpriceSym_i) ;
-    closepriceSym_i = string(closepriceSym_i) ;
-    volumeSym_i     = string(volumeSym_i) ;
-
-    %  convert string to double
-    openpriceSym_i  = str2double(openpriceSym_i) ;
-    highpriceSym_i  = str2double(highpriceSym_i) ;
-    lowpriceSym_i   = str2double(lowpriceSym_i) ;
-    closepriceSym_i = str2double(closepriceSym_i) ;
-    volumeSym_i     = str2double(volumeSym_i) ;
-
-    % put back the clean data into timetable
-    openPriceNumerTT(:,idx).Variables    = openpriceSym_i  ;
-    highPriceNumerTT(:,idx).Variables    = highpriceSym_i   ;
-    lowPriceNumerTT(:,idx).Variables     = lowpriceSym_i  ;
-    closePriceNumerTT(:,idx).Variables   = closepriceSym_i ;
-    volumeNumerTT(:,idx).Variables       = volumeSym_i ;
-
+%=======================================================================
+%% Check final result
+nData = numel(dataPriceLimOutput);
+resultCheck = zeros(1,nData);
+for idx = 1:nData
+    resultCheck(idx) = max(max(isnan(dataPriceLimOutput{idx}.Variables)));
 end
 
-priceVolumeNumerStruct.openPrice = openPriceNumerTT;
-priceVolumeNumerStruct.highPrice  = highPriceNumerTT;
-priceVolumeNumerStruct.lowPrice  = lowPriceNumerTT;
-priceVolumeNumerStruct.closePrice  = closePriceNumerTT;
-priceVolumeNumerStruct.volume = volumeNumerTT;
+%% transfer final result
+dataClean = dataPriceLimOutput;
 
-clearvars -except priceVolumeNumerStruct
-end
+%=======================================================================
+%% end of function
 
-%% cleanPriceChangeLimitFcn
-
-function [openPriceCleanTT, highPriceCleanTT, lowPriceCleanTT,...
-    closePriceCleanTT, volumeCleanTT] = cleanPriceChangeLimitFcn(...
-    priceVolumeStruct)
-
-% data preparation
-openpriceFilledTT = priceVolumeStruct.openPrice;
-highpriceFilledTT = priceVolumeStruct.highPrice;
-lowpriceFilledTT = priceVolumeStruct.lowPrice;
-closepriceFilledTT = priceVolumeStruct.closePrice;
-volumeFilledTT = priceVolumeStruct.volume;
-
-% Identify daily ret crossing the arb and ara limit
-closepriceretTT = tick2ret (closepriceFilledTT) ;
-closepriceret = closepriceretTT.Variables ;
-sym = closepriceretTT.Properties.VariableNames ;
-
-% ARA limit
-priceretLimit = 35/100 ;
-priceretcrosslimit = closepriceret > priceretLimit  ;
-crossARAposition = max(priceretcrosslimit)  ;
-nsymARA = sum(crossARAposition) ;
-symARA  = sym(crossARAposition);
-symARAout = transpose(symARA) ;
-
-% ARB limit
-priceretLimit = 35/100 ;
-priceretcrosslimit = closepriceret < -priceretLimit ;
-crossARBposition = max(priceretcrosslimit)  ;
-nsymARB = sum(crossARBposition) ;
-symARB = sym(crossARBposition);
-symARBout = transpose(symARB) ;
-
-% combine marker
-combinemarker = crossARAposition + crossARBposition ;
-crosslimitposition = combinemarker > 0 ;
-symCrossLimit = transpose(eraseBetween (sym(:,crosslimitposition), 5,10)) ;
-nsymCrossLimit = numel(symCrossLimit) ;
-
-%% Remove data column containing priceretlimit ARA & ARB error
-% open price
-openPriceCleanTT = openpriceFilledTT ;
-openPriceClean = openPriceCleanTT.Variables ;
-openPriceClean(:,crosslimitposition) = nan;
-openPriceCleanTT.Variables = openPriceClean ;
-
-% high price
-highPriceCleanTT = highpriceFilledTT ;
-highPriceClean = highPriceCleanTT.Variables ;
-highPriceClean(:,crosslimitposition) = nan ;
-highPriceCleanTT.Variables = highPriceClean ;
-
-% low price
-lowPriceCleanTT = lowpriceFilledTT ;
-lowPriceClean = lowPriceCleanTT.Variables ;
-lowPriceClean(:,crosslimitposition) = nan ;
-lowPriceCleanTT.Variables = lowPriceClean ;
-
-% close price
-closePriceCleanTT = closepriceFilledTT ;
-closePriceClean = closePriceCleanTT.Variables ;
-closePriceClean(:,crosslimitposition) = nan ;
-closePriceCleanTT.Variables = closePriceClean ;
-
-% volume price
-volumeCleanTT = volumeFilledTT ;
-volumeClean = volumeCleanTT.Variables ;
-volumeClean(:,crosslimitposition) = nan ;
-volumeCleanTT.Variables = volumeClean ;
-
+clearvars -except dataClean
 
 end

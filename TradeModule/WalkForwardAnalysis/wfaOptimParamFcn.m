@@ -324,7 +324,7 @@ dataInputTrainSet.volume = dataInput.volume(timeColSignalTrainSet,:);
 dataInputTrainSetClean = cleanDataFcn (dataInputTrainSet);
 
 % generate backtest output
-btResultTrainSet = btEngineVectorizedFcn(dataInputTrainSetClean, tradingSignalTrainSet,...
+btResultTrainSet = btEngineVectFcn(dataInputTrainSetClean, tradingSignalTrainSet,...
     tradingCost, maxCapAllocation);
 
 %-----------------------------------------------------------------------
@@ -340,7 +340,7 @@ dataInputTestSet.volume = dataInput.volume(timeColSignalTestSet,:);
 dataInputTestSetClean = cleanDataFcn (dataInputTestSet);
 
 % generate backtest output
-btResultTestSet = btEngineVectorizedFcn(dataInputTestSetClean, tradingSignalTestSet,...
+btResultTestSet = btEngineVectFcn(dataInputTestSetClean, tradingSignalTestSet,...
     tradingCost, maxCapAllocation);
 
 

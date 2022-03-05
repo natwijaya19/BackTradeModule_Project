@@ -20,9 +20,9 @@ tic
 wfaTester = wfaTester.loadSymbols;
 tLoadSym = toc
 %% load data from yahoo finance
-% tic
-% wfaTester = wfaTester.loadDataFromYahoo;
-% tLoadYahoo = toc
+tic
+wfaTester = wfaTester.loadDataFromYahoo;
+tLoadYahoo = toc
 %% load priceVolume data from matFile
 tic
 wfaTester = wfaTester.loadDataFromMatFile;

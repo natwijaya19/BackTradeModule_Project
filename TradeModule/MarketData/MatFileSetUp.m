@@ -4,7 +4,7 @@ classdef MatFileSetUp
     
     properties
         path  = pwd;
-        fileName = "DataInput\PriceVolumeInput.mat";    
+        fileName = "DataInput\PriceVolumeInput2010To2022.mat";    
     end
     
 end
