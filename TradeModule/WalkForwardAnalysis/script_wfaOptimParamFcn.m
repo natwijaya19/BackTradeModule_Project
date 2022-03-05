@@ -276,13 +276,12 @@ for walkIdx = 1:nWalk
         % apply the optimizedTradingParam to generateSignal on training dataset
         % generate tradingSignal in training dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
-        tradingSignalTrainOut = generateTradingSignalFcn (dataStructInput, tradingSignalParameter);
+        tradingSignalTrainOut = tradeSignalShortMomFcn(tradingSignalParameter, priceVolumeClean);
 
         % assign signal to tradingSignalTestSet
         timeColSignalTrain = timeColTrainWalkIdx(end-nstepTrain+1:end,:);
         tradingSignalTrainSet(timeColSignalTrain,SymInMCapIdxWalkIdx) = tradingSignalTrainOut(timeColSignalTrain,:);
 
-        clearvars dataStructInput
         %-------------------------------------------------------------------------
 
         % apply the optimizedTradingParam to generateSignal on test dataset
@@ -291,11 +290,15 @@ for walkIdx = 1:nWalk
         startTestSet = endTestSet - nstepTest - lookbackUB +1;
         timeColTestWalkIdx = timeColDataInput(startTestSet:endTestSet);
 
-        dataInputTest{1} = dataInput{1}(timeColTestWalkIdx,openPriceVarName);
-        dataInputTest{2} = dataInput{2}(timeColTestWalkIdx,highPriceVarName);
-        dataInputTest{3} = dataInput{3}(timeColTestWalkIdx,lowPriceVarName);
-        dataInputTest{4} = dataInput{4}(timeColTestWalkIdx,closePriceVarName);
-        dataInputTest{5} = dataInput{5}(timeColTestWalkIdx,volumeVarName);
+        % setUp dataInput contains symbols of mCapIdx only  in each walk
+        dataInputTest = cell(1,numel(dataInput));
+        for idx=1:numel(dataInput)
+            VarNames = strcat(SymInMCapIdxWalkIdx,symEnd(idx));
+            dataInputTest{idx} = dataInput{idx}(timeColTestWalkIdx,VarNames);
+        end
+
+        % clean dataInput
+        dataInputTest = cleanDataFcn (dataInputTest);
 
         % generate tradingSignal in test dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
@@ -373,7 +376,9 @@ fullFileName = fullfile(path, detailPath, fullName);
 
 save(fullFileName, 'wfaOptimStructOut');
 
-%% =========================================================================
+% =========================================================================
+
+%% end of function
 
 % cleanvars -except wfaOptimStructOut
 tWFAOptim = toc
