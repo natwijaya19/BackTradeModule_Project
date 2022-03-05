@@ -1,6 +1,6 @@
-function optimStructOut = optimParamsFcn (dataStructInput,...
-    optimLookbackStep, tradingCost, maxCapAllocation,...
-    nlConstParam, LBUBConst, maxFcnEval)
+function optimStructOut = optimParamsFcn (dataInput,...
+    backShiftNDay, optimLookbackStep, tradingCost, maxCapAllocation,...
+    nlConstParam, LBUBConst, maxFcnEval, nVars)
 
 % optimParamsFcn - function for parameter optimization
 % USAGE:
@@ -57,17 +57,17 @@ useParallel = true;
 
 %% define function handle of objectiveFcn and nonLinearConstraintFcn
 
-obj = @(x)objectiveFcn (x, dataStructInput, tradingCost,...
+objFcn = @(x)objectiveFcn (x, dataInput, backShiftNDay, tradingCost,...
     maxCapAllocation, optimLookbackStep);
-nlconst = @(x)nonLinearConstraintFcn (x, dataStructInput,...
-    optimLookbackStep, tradingCost, maxCapAllocation,...
+
+nlconst = @(x)nonLinearConstraintFcn (x, dataInput,...
+    backShiftNDay, optimLookbackStep, tradingCost, maxCapAllocation,...
     nlConstParam);
 
-objconstr = packfcn(obj,nlconst) ;
+objconstr = packfcn(objFcn,nlconst) ;
 F = objconstr ;
 
 %% define other constrains
-nVars = 17;
 intConst = 1:nVars;
 LB = LBUBConst(:,1)';
 UB = LBUBConst(:,2)';
@@ -75,9 +75,11 @@ UB = LBUBConst(:,2)';
 %% setup optimization options
 options = optimoptions('surrogateopt','PlotFcn',"surrogateoptplot", ...
     "ConstraintTolerance",1e-2, "UseParallel", useParallel,...
-    "UseVectorized",true, "BatchUpdateInterval", N, "MaxFunctionEvaluations", maxFcnEval);
+    "UseVectorized",true,"MaxFunctionEvaluations", maxFcnEval,...
+    "BatchUpdateInterval", N);
 
-% 
+%  
+
 %% call surrogateopt to solve the problem
 [sol,fval,exitflag,output] = surrogateopt(F,LB,UB,intConst,options) ;
 

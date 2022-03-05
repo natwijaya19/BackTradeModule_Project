@@ -1,5 +1,5 @@
-function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataStructInput,...
-    optimLookbackStep, tradingCost, maxCapAllocation, nlConstParam)
+function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataInput,...
+    backShiftNDay, optimLookbackStep, tradingCost, maxCapAllocation, nlConstParam)
 %
 % nonLinearConstraintFcn
 %
@@ -37,16 +37,20 @@ minLast200DRetThreshold = nlConstParam.Last200DRetThreshold ;
 
 
 % generate signal
-tradingSignalOut = generateTradingSignalFcn (dataStructInput, tradingSignalParam);
+tradingSignalOut = tradeSignalShortMomFcn (tradingSignalParam, dataInput);
 
 % backtest the signal against the price
 tradingSignalIn = tradingSignalOut;
-resultStruct = btEngineVectFcn (dataStructInput, tradingSignalIn,...
-    tradingCost, maxCapAllocation);
+
+resultStruct = btEngineVectFcn (dataInput, tradingSignalIn,...
+    backShiftNDay, tradingCost, maxCapAllocation);
 
 % calculate equityCurve at for the evaluation
 equityCurvePortfolioVar_raw = resultStruct.equityCurvePortfolioTT.Variables;
 equityCurvePortfolioVar = equityCurvePortfolioVar_raw(end-optimLookbackStep+1: end);
+equityCurvePortfolioVar = string(equityCurvePortfolioVar);
+equityCurvePortfolioVar = double(equityCurvePortfolioVar);
+equityCurvePortfolioVar = fillmissing(equityCurvePortfolioVar, "previous");
 
 % % calcluate return for the given  optimLookbackWindow minPortfolioReturn
 startOptimPortValue = equityCurvePortfolioVar(1);

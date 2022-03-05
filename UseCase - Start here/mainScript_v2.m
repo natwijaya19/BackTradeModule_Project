@@ -12,7 +12,7 @@ clc
 
 %% instantiate the WalkForwardEngine as wfaTester
 
-wfaTester = WalkForwardEngine;
+wfaTester = WFAEngine;
 
 
 %% load symbols reference from an excel file

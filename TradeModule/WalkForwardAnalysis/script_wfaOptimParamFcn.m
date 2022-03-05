@@ -25,11 +25,13 @@ nstepTest = wfaSetUpParam.nstepTest; % Number of step for testing dataset
 % btEngineSetUp
 tradingCost = wfaSetUpParam.tradingCost;
 maxCapAllocation = wfaSetUpParam.maxCapAllocation;
+backShiftNDay = wfaSetUpParam.backShiftNDay;
 
 % optimization set up
 optimLookbackStep = wfaSetUpParam.nstepTrain;
 maxFcnEval = wfaSetUpParam.maxFcnEval;
 lbubConst = wfaSetUpParam.lbubConst;
+nVars = wfaSetUpParam.nVars;
 
 nlConstParam.maxDDThreshold  = wfaSetUpParam.maxDDThreshold;
 nlConstParam.minPortRet = wfaSetUpParam.minPortRet;
@@ -46,15 +48,18 @@ nDataRowRequired = nstepWalk+additionalData;
 %-------------------------------------------------------------------------
 
 %% prepare data for for WFA
-dataInput.openPrice = marketData.openPrice(end-nDataRowRequired+1:end,:);
-dataInput.highPrice = marketData.highPrice(end-nDataRowRequired+1:end,:);
-dataInput.lowPrice = marketData.lowPrice(end-nDataRowRequired+1:end,:);
-dataInput.closePrice = marketData.closePrice(end-nDataRowRequired+1:end,:);
-dataInput.volume = marketData.volume(end-nDataRowRequired+1:end,:);
-dataInput.marketCapCategory = marketData.marketCapCategory(end-nDataRowRequired+1:end,:);
+priceVolumeData = marketData.priceVolumeData;
+nData = numel(priceVolumeData);
+dataInput = cell(1,nData);
+
+for idx=1:numel(priceVolumeData)
+    dataInput{idx} = priceVolumeData{idx}(end-nDataRowRequired+1:end,:);
+end
+    
+marketCapCategory = marketData.marketCapCategory(end-nDataRowRequired+1:end,:);
 
 % Number of rows in raw data
-nRowDataAvailable = size (marketData.openPrice,1) ;
+nRowDataAvailable = size (dataInput{1},1) ;
 
 % nRowDataAvailable must be larger than nDataRowRequired
 validIF = nRowDataAvailable < nDataRowRequired;
@@ -63,13 +68,12 @@ if validIF
     error(message('finance:WFA:nRowDataAvailable must be larger than nDataRowRequired'));
 end
 
-clearvars marketData
 %-------------------------------------------------------------------------
 
 %% marking idx step for each walk
 % idx for start and end of test steps
-nDataRowRequired = size(dataInput.openPrice,1);
-lastEndStepTest = nDataRowRequired;
+nRowAvailable = size(dataInput{1},1);
+lastEndStepTest = nRowAvailable;
 lastStartStepTest = lastEndStepTest - nstepTest +1;
 firstEndStepTest = lastEndStepTest - (nWalk-1)*nstepTest;
 firstStartStepTest = firstEndStepTest - nstepTest +1;
@@ -87,13 +91,13 @@ startStepLookback = endStepLookback - lookbackUB+1;
 
 
 % determine index and timecolumn for each step and walk
-timeCol = dataInput.openPrice.Time;
+timeCol = dataInput{1}.Time;
 nRow = numel(timeCol);
 %-------------------------------------------------------------------------
 
 %% prepare market cap category for loop to get the list of symbols at each EndStepTrainIdx for each
 % mktCapCategory
-marketCapCategory = dataInput.marketCapCategory;
+
 uniqueMktCap = unique(marketCapCategory.Variables);
 uniqueMktCap(ismissing(uniqueMktCap)) = [];
 uniqueMktCap= sort(uniqueMktCap);
@@ -105,17 +109,17 @@ mCapEndStepTrainIdx = marketCapCategory(endStepTrain,:);
 mCapEndStepTrainIdxVar = mCapEndStepTrainIdx.Variables;
 
 % preallocate tradingSignalTrainSet
-timeCol = dataInput.openPrice.Time;
+timeCol = dataInput{1}.Time;
 timeColSignalTrainSet = timeCol(startStepTrain(1):endStepTrain(end));
-openPrice = dataInput.openPrice;
+openPrice = dataInput{1};
 tradingSignalTrainSet = openPrice(timeColSignalTrainSet,:);
 tradingSignalTrainSet.Variables = zeros(size(tradingSignalTrainSet));
 tradingSignalTrainSet.Properties.VariableNames = strrep(tradingSignalTrainSet.Properties.VariableNames,"_open","");
 
 % preallocate tradingSignalTestSet
-timeCol = dataInput.openPrice.Time;
+timeCol = dataInput{1}.Time;
 timeColSignalTestSet = timeCol(startStepTest(1):endStepTest(end));
-openPrice = dataInput.openPrice;
+openPrice = dataInput{1};
 tradingSignalTestSet = openPrice(timeColSignalTestSet,:);
 tradingSignalTestSet.Variables = zeros(size(tradingSignalTestSet));
 tradingSignalTestSet.Properties.VariableNames = strrep(tradingSignalTestSet.Properties.VariableNames,"_open","");
@@ -123,24 +127,20 @@ tradingSignalTestSet.Properties.VariableNames = strrep(tradingSignalTestSet.Prop
 %-------------------------------------------------------------------------
 
 %% preallocate optimizedSignalParam for each startTrainStepIdx and marketCapCategory
-tradingSignalParamVarName = [
-    "liquidityVolumeShortMALookback"
-    "liquidityVolumeLongMALookback";
-    "liquidityVolumeMAThreshold";
-    "liquidityVolumeMANDayBuffer";
-    "liquidityValueMALookback";
-    "liquidityValueMAThreshold";
-    "liquidityValueMANDayBuffer";
-    "liquidityNDayVolumeValueBuffer";
-    "momentumPriceMALookback";
-    "momentumPriceMAToCloseThreshold";
-    "momentumPriceRetLowToCloseLookback";
-    "momentumPriceRetLowToCloseThreshold";
-    "momentumPriceRetLowToCloseNDayBuffer";
-    "liquidityMomentumSignalBuffer";
-    "cutLossHighToCloseNDayLookback";
-    "cutLossHighToCloseMaxPct";
-    "nDayBackShift"];
+tradingSignalParamVarName =...
+    [...
+    "volumeMATreshold"; % input #1
+    "volumeMALookback"; % input #2
+    "valueThreshold"; % input #3 in Rp hundreds million
+    "valueLookback"; % input #4 nDays
+    "volumeValueBufferDays"; % input #5
+    "priceRetLowCloseThresh"; % input #6
+    "priceMAThreshold"; % input #7
+    "priceMALookback" ; % input #8
+    "priceVolumeValueBufferDays "; % input #9
+    "cutLossLookback" ; % input #10
+    "cutLossPct" ;... % input #11
+    ];
 
 
 nCol = numel(uniqueMktCap) * numel(tradingSignalParamVarName);
@@ -173,7 +173,8 @@ end
 optimTradingSignalParam.Properties.VariableNames = optimTradingSignalParamVarNames;
 
 %-------------------------------------------------------------------------
-% preallocate timetable for output FVal (cumulative return) in training dataset
+
+%% preallocate timetable for output FVal (cumulative return) in training dataset
 nCol = numel(uniqueMktCap);
 nRow = nWalk;
 varTypes = repmat({'double'},1,nCol);
@@ -198,9 +199,11 @@ nMktCap = numel(uniqueMktCap);
 % % prepare for waitbarFig
 msg = "Please wait. Optimizing parameter for walk forward analysis";
 waitbarFig = waitbar(0,msg);
-timeColDataInput = dataInput.openPrice.Time;
+timeColDataInput = dataInput{1}.Time;
 % optimParam for each walk
 nIteration = nWalk*nMktCap;
+
+symEnd = ["_open", "_high", "_low", "_close", "_volume"];
 
 for walkIdx = 1:nWalk
     % walkIdx =1
@@ -235,34 +238,23 @@ for walkIdx = 1:nWalk
         SymInMCapIdxWalkIdx = symbols(mCapIdxAtWalkIdx);
 
         % setUp dataInput contains symbols of mCapIdx only  in each walk
-        openPriceVarName = strcat(SymInMCapIdxWalkIdx,"_open");
-        dataInputTrain.openPrice = dataInput.openPrice(timeColTrainWalkIdx,openPriceVarName);
-
-        highPriceVarName = strcat(SymInMCapIdxWalkIdx,"_high");
-        dataInputTrain.highPrice = dataInput.highPrice(timeColTrainWalkIdx,highPriceVarName);
-
-        lowPriceVarName = strcat(SymInMCapIdxWalkIdx,"_low");
-        dataInputTrain.lowPrice = dataInput.lowPrice(timeColTrainWalkIdx,lowPriceVarName);
-
-        closePriceVarName = strcat(SymInMCapIdxWalkIdx,"_close");
-        dataInputTrain.closePrice = dataInput.closePrice(timeColTrainWalkIdx,closePriceVarName);
-
-        volumeVarName = strcat(SymInMCapIdxWalkIdx,"_volume");
-        dataInputTrain.volume = dataInput.volume(timeColTrainWalkIdx,volumeVarName);
-
+        dataInputTrain = cell(1,numel(dataInput));
+        for idx=1:numel(dataInput) 
+            VarNames = strcat(SymInMCapIdxWalkIdx,symEnd(idx));
+            dataInputTrain{idx} = dataInput{idx}(timeColTrainWalkIdx,VarNames);
+        end
 
         % clean dataInput
         priceVolumeRaw = dataInputTrain;
         priceVolumeClean = cleanDataFcn (priceVolumeRaw);
 
         % transfer the dataInput
-        dataStructInput = priceVolumeClean;
-        clearvars priceVolumeRaw priceVolumeClean dataInputTrain
+        clearvars priceVolumeRaw dataInputTrain
         %--------------------------------------------------------------------
 
-        optimStructOut = optimParamsFcn (dataStructInput, optimLookbackStep,...
-            tradingCost, maxCapAllocation, nlConstParam,...
-            lbubConst, maxFcnEval);
+        optimStructOut = optimParamsFcn(priceVolumeClean, backShiftNDay,...
+            optimLookbackStep, tradingCost, maxCapAllocation,...
+            nlConstParam, lbubConst, maxFcnEval, nVars);
 
         %--------------------------------------------------------------------
 
@@ -299,15 +291,15 @@ for walkIdx = 1:nWalk
         startTestSet = endTestSet - nstepTest - lookbackUB +1;
         timeColTestWalkIdx = timeColDataInput(startTestSet:endTestSet);
 
-        dataInputTest.openPrice = dataInput.openPrice(timeColTestWalkIdx,openPriceVarName);
-        dataInputTest.highPrice = dataInput.highPrice(timeColTestWalkIdx,highPriceVarName);
-        dataInputTest.lowPrice = dataInput.lowPrice(timeColTestWalkIdx,lowPriceVarName);
-        dataInputTest.closePrice = dataInput.closePrice (timeColTestWalkIdx,closePriceVarName);
-        dataInputTest.volume = dataInput.volume(timeColTestWalkIdx,volumeVarName);
+        dataInputTest{1} = dataInput{1}(timeColTestWalkIdx,openPriceVarName);
+        dataInputTest{2} = dataInput{2}(timeColTestWalkIdx,highPriceVarName);
+        dataInputTest{3} = dataInput{3}(timeColTestWalkIdx,lowPriceVarName);
+        dataInputTest{4} = dataInput{4}(timeColTestWalkIdx,closePriceVarName);
+        dataInputTest{5} = dataInput{5}(timeColTestWalkIdx,volumeVarName);
 
         % generate tradingSignal in test dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
-        tradingSignalTTOut = generateTradingSignalFcn (dataInputTest, tradingSignalParameter);
+        tradingSignalTTOut = tradeSignalShortMomFcn (tradingSignalParameter, dataInputTest);
 
         % assign signal to tradingSignalTestSet
         timeColSignalTest = timeColTestWalkIdx(end-nstepTest+1:end,:);
@@ -323,34 +315,39 @@ end
 
 %% backtest on the training dataset
 % prepare training dataset backtest the signal against the market data
-dataInputTrainSet.openPrice = dataInput.openPrice(timeColSignalTrainSet,:);
-dataInputTrainSet.highPrice = dataInput.highPrice(timeColSignalTrainSet,:);
-dataInputTrainSet.lowPrice = dataInput.lowPrice(timeColSignalTrainSet,:);
-dataInputTrainSet.closePrice = dataInput.closePrice(timeColSignalTrainSet,:);
-dataInputTrainSet.volume = dataInput.volume(timeColSignalTrainSet,:);
+timeCol = dataInput{1}.Time;
+timeColSignalTrainSet = timeCol(startStepTrain(1):endStepTrain(end));
+dataInputTrainSet = cell(1,numel(dataInput));
+
+for idx = 1:numel(dataInput)
+    dataInputTrainSet{idx}= dataInput{idx}(timeColSignalTrainSet,:);
+end
 
 dataInputTrainSetClean = cleanDataFcn (dataInputTrainSet);
 
 % generate backtest output
-btResultTrainSet = btEngineVectFcn(dataInputTrainSetClean, tradingSignalTrainSet,...
-    tradingCost, maxCapAllocation);
+btResultTrainSet = btEngineVectFcn (dataInputTrainSetClean, tradingSignalTrainSet,...
+    backShiftNDay, tradingCost, maxCapAllocation);
 
 clearvars dataInputTrainSet dataInputTrainSetClean
+
 %-----------------------------------------------------------------------
 
 %% backtest on the test dataset
 % prepare test dataset backtest the signal against the market data
-dataInputTestSet.openPrice = dataInput.openPrice(timeColSignalTestSet,:);
-dataInputTestSet.highPrice = dataInput.highPrice(timeColSignalTestSet,:);
-dataInputTestSet.lowPrice = dataInput.lowPrice(timeColSignalTestSet,:);
-dataInputTestSet.closePrice = dataInput.closePrice(timeColSignalTestSet,:);
-dataInputTestSet.volume = dataInput.volume(timeColSignalTestSet,:);
+timeCol = dataInput{1}.Time;
+timeColSignalTestSet = timeCol(startStepTest(1):endStepTest(end));
+dataInputTestSet = cell(1,numel(dataInput));
+
+for idx = 1:numel(dataInput)
+    dataInputTestSet{idx}= dataInput{idx}(timeColSignalTestSet,:);
+end
 
 dataInputTestSetClean = cleanDataFcn (dataInputTestSet);
 
 % generate backtest output
-btResultTestSet = btEngineVectFcn(dataInputTestSetClean, tradingSignalTestSet,...
-    tradingCost, maxCapAllocation);
+btResultTestSet = btEngineVectFcn (dataInputTestSetClean, tradingSignalTestSet,...
+    backShiftNDay, tradingCost, maxCapAllocation);
 
 clearvars dataInputTestSet dataInputTestSetClean
 

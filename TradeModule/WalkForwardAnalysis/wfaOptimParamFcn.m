@@ -40,7 +40,7 @@ nlConstParam.Last60DRetThreshold = wfaSetUpParam.minLast60DRetThreshold;
 nlConstParam.Last200DRetThreshold = wfaSetUpParam.minLast200DRetThreshold;
 
 
-% number of required nDataRowRequired
+% number of required nDataRow
 nstepWalk = nWalk*nstepTest + lookbackUB + nstepTrain;
 additionalData = nstepTest; % additional data for safety required data
 nDataRowRequired = nstepWalk+additionalData;

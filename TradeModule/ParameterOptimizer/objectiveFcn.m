@@ -1,5 +1,5 @@
-function Fval = objectiveFcn (tradingSignalParam, dataStructInput,...
-                tradingCost, maxCapAllocation, optimLookbackStep)
+function Fval = objectiveFcn (tradingSignalParam, dataInputBT,...
+                backShiftNDay, tradingCost, maxCapAllocation, optimLookbackStep)
     %
     % USAGE:
     %       Fval = objectiveFcn (tradingSignalParam, dataStructInput, optimLookbackStep)
@@ -15,12 +15,12 @@ function Fval = objectiveFcn (tradingSignalParam, dataStructInput,...
     % optimLookbackStep = 40;
     
     % generate signal
-    tradingSignalOut = generateTradingSignalFcn (dataStructInput, tradingSignalParam);
+    tradingSignalOut = tradeSignalShortMomFcn (tradingSignalParam, dataInputBT);
     
     % backtest the signal against the price
-    tradingSignalIn = tradingSignalOut;
-    resultStruct = btEngineVectFcn (dataStructInput, tradingSignalIn,...
-                    tradingCost, maxCapAllocation);
+    tradeSignalInput = tradingSignalOut;
+    resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput,...
+        backShiftNDay, tradingCost, maxCapAllocation);
     
     % calculate equityCurve at for the evaluation
     equityCurvePortfolioVar_raw = resultStruct.equityCurvePortfolioTT.Variables;
@@ -33,6 +33,7 @@ function Fval = objectiveFcn (tradingSignalParam, dataStructInput,...
     cumPortfolioReturn(isnan(cumPortfolioReturn)) = 0;
     
     Fval = -cumPortfolioReturn;
+    
     clearvars -except Fval
 
 

@@ -1,4 +1,5 @@
-function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput, backShiftNDay, tradingCost, maxCapAllocation)
+function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput,...
+    backShiftNDay, tradingCost, maxCapAllocation)
 
 % backtesterEngineFcn generate output backtesting signal against price
 %
@@ -41,6 +42,17 @@ function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput, backShif
 %
 
 %==========================================================================
+
+%% argument validation
+arguments
+    dataInputBT cell
+    tradeSignalInput timetable
+    backShiftNDay {mustBeNumeric, mustBePositive, mustBeInteger}
+    tradingCost {mustBeNumeric, mustBePositive}
+    maxCapAllocation {mustBeNumeric, mustBePositive}
+
+end
+
 %% data transfer
 %TODO finalize the data transfer
 openPrice = dataInputBT{1};
@@ -88,7 +100,9 @@ nSignalDaily = sum(signalVar,2);
 maxCapAllocPerSym;
 capAlloc = ones(numel(nSignalDaily),1);
 capAlloc = capAlloc ./ nSignalDaily;
+capAlloc(isinf(capAlloc)) = 0;
 capAlloc(isnan(capAlloc)) = 0;
+
 capAlloc(capAlloc > maxCapAllocPerSym) = maxCapAllocPerSym;
 %------------------------------------------------------------------------
 
@@ -143,11 +157,13 @@ buyCostPortion = sodGrossBuyPortion - sodNetBuyPortion;
 closeToClosePriceRet = zeros(size(signalVar));
 closeToClosePriceRet(2:end,:) = (closePriceVar(2:end,:) ./ closePriceVar(1:end-1,:)) - 1;
 closeToClosePriceRet(isnan(closeToClosePriceRet)) = 0;
+closeToClosePriceRet(isinf(closeToClosePriceRet)) = 0;
 
 %slippage priceRet from last trading day close price to open price in the start of day
 closeToOpenPriceRet = zeros(size(signalVar));
 closeToOpenPriceRet(2:end,:) = (openPriceVar(2:end,:) ./ closePriceVar(1:end-1,:)) - 1;
 closeToOpenPriceRet(isnan(closeToOpenPriceRet)) = 0;
+closeToOpenPriceRet(isinf(closeToOpenPriceRet)) = 0;
 
 % netPriceRet after slippage is closeToClosePriceRet minus by closeToOpenPrice
 % netPriceRetAfterSlippage = closeToClosePriceRet - closeToOpenPrice
@@ -171,6 +187,7 @@ sodPrevRemainPortion;
 closeToClosePriceRet = zeros(size(signalVar));
 closeToClosePriceRet(2:end,:) = (closePriceVar(2:end,:) ./ closePriceVar(1:end-1,:)) - 1;
 closeToClosePriceRet(isnan(closeToClosePriceRet)) = 0;
+closeToClosePriceRet(isinf(closeToClosePriceRet)) = 0;
 
 eodPrevRemainPortion = sodPrevRemainPortion .*(1+closeToClosePriceRet);
 %------------------------------------------------------------------------
@@ -188,6 +205,7 @@ sellCost;
 closeToOpenPriceRet = zeros(size(signalVar));
 closeToOpenPriceRet(2:end,:) = (openPriceVar(2:end,:) ./ closePriceVar(1:end-1,:)) - 1;
 closeToOpenPriceRet(isnan(closeToOpenPriceRet)) = 0;
+closeToOpenPriceRet(isinf(closeToOpenPriceRet)) = 0;
 
 sodGrossSellPortionAtOpenPrice = sodGrossSellPortion .* (closeToOpenPriceRet+1);
 sodNetSellPortionAfterSellCost = sodGrossSellPortionAtOpenPrice ./ (1+sellCost);
@@ -212,7 +230,10 @@ eodTotalAsset = eodCash + eodTotalInvestedCapital - totalDailySellCostPortion;
 
 % calculate daily return dailyRet
 dailyNetRetPortfolio = (eodTotalAsset ./ sodTotalAsset) - 1;
+dailyNetRetPortfolio = string(dailyNetRetPortfolio);
+dailyNetRetPortfolio = double(dailyNetRetPortfolio);
 dailyNetRetPortfolio (isnan(dailyNetRetPortfolio)) = 0;
+dailyNetRetPortfolio (isinf(dailyNetRetPortfolio)) = 0;
 
 timeCol = openPrice.Time;
 nRow = size(nSignalDaily,1);
@@ -231,6 +252,9 @@ resultStruct.dailyNetRetPortfolioTT = dailyNetRetPortfolioTT;
 % equityCurvePortfolio
 equityCurvePortfolio = ret2tick (dailyNetRetPortfolio);
 equityCurvePortfolio(1,:) = [];
+equityCurvePortfolio = string(equityCurvePortfolio);
+equityCurvePortfolio = double(equityCurvePortfolio);
+equityCurvePortfolio = fillmissing(equityCurvePortfolio, "previous");
 
 % put equityCurvePortfolio into timetable
 timeCol = openPrice.Time;
@@ -253,7 +277,6 @@ resultStruct.equityCurvePortfolioTT = equityCurvePortfolioTT;
 % sellCostPortion per symbol
 eodInvestedCapitalPerSym = eodNetBuyPortion + eodPrevRemainPortion - sellCostPortion ;
 dailyNetRetPerSym = (eodInvestedCapitalPerSym ./ sodInvestedCapitalPerSym) - 1 ;
-dailyNetRetPerSym(isnan(dailyNetRetPerSym)) = 0;
 dailyNetRetPerSym(isnan(dailyNetRetPerSym)) = 0;
 dailyNetRetPerSym(isinf(dailyNetRetPerSym)) = 0;
 %------------------------------------------------------------------------

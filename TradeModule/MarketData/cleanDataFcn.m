@@ -1,4 +1,13 @@
 function dataClean = cleanDataFcn(dataRaw)
+%cleanDataFcn clean the data by rearranging the symbols alphabetically,
+%fillmissing and put zero value for timeseries having priceret beyond the
+%priceRetLimit
+
+%% argument validation
+arguments
+    dataRaw cell
+
+end
 
 %% rearrange data based on symbols alphabetcicaly
 dataSortIn = dataRaw;
