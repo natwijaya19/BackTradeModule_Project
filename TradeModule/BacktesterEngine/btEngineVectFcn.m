@@ -40,7 +40,7 @@ function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput, wfaSetUp
 %                                 ] ;  % close the array
 %
 
-%==========================================================================
+%================================================================================
 
 %% argument validation
 arguments
@@ -49,6 +49,8 @@ arguments
     wfaSetUpParam WFASetUpParam
 
 end
+
+%================================================================================
 
 %% data transfer
 %TODO finalize the data transfer
@@ -71,9 +73,10 @@ tradingSignal = tradeSignalInput;
 tradingSignal.Variables = backShiftFcn (tradeSignalInput.Variables , backShiftNDay);
 
 clearvars dataStructInput tradeSignalInput wfaSetUpParam
-%------------------------------------------------------------------------
 
-% data preparation
+%================================================================================
+
+%% data preparation
 openPriceVar = openPrice.Variables;
 openPriceVarString = string(openPriceVar);
 openPriceVar = double(openPriceVarString);
@@ -91,9 +94,11 @@ signalVar = double(signalVarString);
 signalVar(isnan(signalVar)) = 0;
 
 clearvars openPriceVarString closePriceVarString signalVarString
-%--------------------------------------------------------------------------------------
 
-% calculate number of asset with signal to buy
+
+%================================================================================
+
+%% calculate number of asset with signal to buy
 nSignalDaily = sum(signalVar,2);
 %------------------------------------------------------------------------
 
@@ -105,10 +110,11 @@ capAlloc(isinf(capAlloc)) = 0;
 capAlloc(isnan(capAlloc)) = 0;
 
 capAlloc(capAlloc > maxCapAllocPerSym) = maxCapAllocPerSym;
-%------------------------------------------------------------------------
+
+%================================================================================
 
 
-% calculate capitalAllocation in start of day to be invested to each symbols to buy and to sell.
+%% calculate capitalAllocation in start of day to be invested to each symbols to buy and to sell.
 %   equally weighted capital allocation is use used
 capAllocPerSym = signalVar .* capAlloc;
 
@@ -140,10 +146,10 @@ sodGrossSellPortion = -1 .* sodGrossSellPortion;
 sz = size(signalVar);
 sodPrevRemainPortion = zeros(sz);
 sodPrevRemainPortion(2:end,:) = capAllocPerSym(1:end-1,:) - sodGrossSellPortion(2:end,:);
-%------------------------------------------------------------------------
 
+%================================================================================
 
-% calculate net invested value from buy portion at the end of day eodNetBuyPortion
+%% calculate net invested value from buy portion at the end of day eodNetBuyPortion
 % sodGrossBuyPortion will experience the effect of buyCost,
 % dailyRet (closeToClosePriceRet) and slippageCost (closeToOpenPriceRet)
 buyCost;
@@ -177,10 +183,9 @@ slippageCostOfSodNetBuyPortion = sodNetBuyPortion .* closeToOpenPriceRet;
 dailySlippageCostOfSodNetBuyPortion = sum(slippageCostOfSodNetBuyPortion,2);
 totalSlippageCostOfSodNetBuyPortion = sum(dailySlippageCostOfSodNetBuyPortion);
 
-%------------------------------------------------------------------------
+%================================================================================
 
-
-% calculate net invested value at the end of day from prevRemainPortion.
+%% calculate net invested value at the end of day from prevRemainPortion.
 % prevRemainPortion will only have the effect of dailyRet (closeToClosePriceRet)
 sodPrevRemainPortion;
 
@@ -191,10 +196,10 @@ closeToClosePriceRet(isnan(closeToClosePriceRet)) = 0;
 closeToClosePriceRet(isinf(closeToClosePriceRet)) = 0;
 
 eodPrevRemainPortion = sodPrevRemainPortion .*(1+closeToClosePriceRet);
-%------------------------------------------------------------------------
 
+%================================================================================
 
-% calculate sellCostPortion from sodGrossSellPortion. This portion will
+%% calculate sellCostPortion from sodGrossSellPortion. This portion will
 % have the effect of slippage and sellCost. sellCost is the only cost will be
 % included into the eod asset calc.
 sodGrossSellPortion;
@@ -218,9 +223,9 @@ slippageCostOfGrossSellPortion = sodGrossSellPortionAtOpenPrice - sodGrossSellPo
 dailySlippageCostOfGrossSellPortion = sum(slippageCostOfGrossSellPortion,2);
 totalSlippageCostOfGrossSellPortion = sum(dailySlippageCostOfGrossSellPortion);
 
-%------------------------------------------------------------------------
+%================================================================================
 
-% calculate end of day (EOD) invested capital
+%% calculate end of day (EOD) invested capital
 eodInvestedCapital = eodNetBuyPortion + eodPrevRemainPortion;
 eodTotalInvestedCapital = sum(eodInvestedCapital,2);
 
@@ -271,19 +276,18 @@ equityCurvePortfolioTT = TT;
 equityCurvePortfolioTT.Variables = equityCurvePortfolio;
 resultStruct.equityCurvePortfolioTT = equityCurvePortfolioTT;
 
-%------------------------------------------------------------------------
+%================================================================================
 
-
-% dailyNetRetPerSym can be calculated buy taking into account the
+%% dailyNetRetPerSym can be calculated buy taking into account the
 % sellCostPortion per symbol
 eodInvestedCapitalPerSym = eodNetBuyPortion + eodPrevRemainPortion - sellCostPortion ;
 dailyNetRetPerSym = (eodInvestedCapitalPerSym ./ sodInvestedCapitalPerSym) - 1 ;
 dailyNetRetPerSym(isnan(dailyNetRetPerSym)) = 0;
 dailyNetRetPerSym(isinf(dailyNetRetPerSym)) = 0;
-%------------------------------------------------------------------------
 
+%================================================================================
 
-% wrap up the result output packed in a data struct resultStruct
+%% wrap up the result output packed in a data struct resultStruct
 % assume 1 is invested at beginning o the signal
 % dailyNetRetPerSym
 timeCol = openPrice.Time;
@@ -307,7 +311,8 @@ equityCurvePerSymTT = openPrice;
 equityCurvePerSymTT.Variables = equityCurvePerSym;
 equityCurvePerSymTT.Properties.VariableNames = symbols;
 resultStruct.equityCurvePerSymTT = equityCurvePerSymTT;
-%------------------------------------------------------------------------
+
+%================================================================================
 
 % totalBuyCost
 buyCostPortion;
@@ -327,10 +332,12 @@ resultStruct.totalSellCost = totalSellCost;
 totalSlippageCost = totalSlippageCostOfSodNetBuyPortion + totalSlippageCostOfGrossSellPortion ;
 resultStruct.totalSlippageCost = totalSlippageCost;
 
-%------------------------------------------------------------------------
+%================================================================================
 
 % TODO summary statistics
 
+
+%================================================================================
 
 %%
 
