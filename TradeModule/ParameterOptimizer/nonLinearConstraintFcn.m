@@ -1,6 +1,4 @@
-function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataInput,...
-    backShiftNDay, optimLookbackStep, tradingCost, maxCapAllocation, nlConstParam)
-%
+function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataInput, wfaSetUpParam)
 % nonLinearConstraintFcn
 %
 % USAGE:
@@ -28,13 +26,13 @@ function [c, ceq] = nonLinearConstraintFcn (tradingSignalParam, dataInput,...
 %======================================================================
 
 % transfer input variables
-maxDDThreshold = nlConstParam.maxDDThreshold ;
-minPortRet = nlConstParam.minPortRet ;
-minDailyRetThreshold = nlConstParam.minDailyRetThreshold ;
-minLast20DRetThreshold = nlConstParam.Last20DRetThreshold ;
-minLast60DRetThreshold = nlConstParam.Last60DRetThreshold ;
-minLast200DRetThreshold = nlConstParam.Last200DRetThreshold ;
-
+optimLookbackStep = wfaSetUpParam.optimLookbackStep;
+maxDDThreshold = wfaSetUpParam.maxDDThreshold;
+minPortRet = wfaSetUpParam.minPortRet;
+minDailyRetThreshold = wfaSetUpParam.minDailyRetThreshold;
+minLast20DRetThreshold = wfaSetUpParam.minLast20DRetThreshold ;
+minLast60DRetThreshold = wfaSetUpParam.minLast60DRetThreshold ;
+minLast200DRetThreshold = wfaSetUpParam.minLast200DRetThreshold ;
 
 % generate signal
 tradingSignalOut = tradeSignalShortMomFcn (tradingSignalParam, dataInput);
@@ -42,8 +40,7 @@ tradingSignalOut = tradeSignalShortMomFcn (tradingSignalParam, dataInput);
 % backtest the signal against the price
 tradingSignalIn = tradingSignalOut;
 
-resultStruct = btEngineVectFcn (dataInput, tradingSignalIn,...
-    backShiftNDay, tradingCost, maxCapAllocation);
+resultStruct = btEngineVectFcn (dataInput, tradingSignalIn,wfaSetUpParam);
 
 % calculate equityCurve at for the evaluation
 equityCurvePortfolioVar_raw = resultStruct.equityCurvePortfolioTT.Variables;
@@ -67,8 +64,9 @@ dailyRet = tick2ret(equityCurvePortfolioVar);
 dailyRet(isnan(dailyRet)) = 0;
 DailyRetMin = min(dailyRet);
 
-clearvars dataStructInput
-%------------------------------------------------------------------------
+clearvars dataInput wfaSetUpParam
+
+%==========================================================================
 
 %% Last 20 days return
 nDays = 20;
@@ -87,8 +85,8 @@ else
     Last20DRetMin = min(Last20DRet);
 
 end
-%------------------------------------------------------------------------
 
+%==========================================================================
 
 %% Last 20 days return
 nDays = 60;
@@ -106,7 +104,8 @@ else
     Last60DRetMin = min(Last60DRet);
 
 end
-%------------------------------------------------------------------------
+
+%==========================================================================
 
 %% Last 200 days return
 nDays = 200;
@@ -125,7 +124,8 @@ else
     Last200DRetMin = min(Last200DRet);
 
 end
-%------------------------------------------------------------------------
+
+%==========================================================================
 
 %% formulate the constraints
 c = [   maxDDThreshold - maxDD;
@@ -137,7 +137,8 @@ c = [   maxDDThreshold - maxDD;
     ];
 
 ceq = [];
-%------------------------------------------------------------------------
+
+%==========================================================================
 
 clearvars -except c eq
 

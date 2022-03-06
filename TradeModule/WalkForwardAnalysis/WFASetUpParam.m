@@ -4,7 +4,7 @@ classdef WFASetUpParam
 
     properties
         % WFA specific set up
-        nWalk = 4 ; % Number of walk for the whole walk forwad
+        nWalk = 36 ; % Number of walk for the whole walk forwad
         lookbackUB = 300; % lookback upper bound
         nstepTrain = 100; % Number of step for training datastasket
         nstepTest = 20; % Number of step for testing dataset
@@ -32,6 +32,7 @@ classdef WFASetUpParam
         lbubConst {mustBeInteger, mustBeNonnegative}
         nDataRowRequired {mustBeInteger, mustBeNonnegative}
         nVars {mustBeInteger, mustBeNonnegative}
+        optimLookbackStep {mustBeInteger, mustBeNonnegative}
 
     end
 
@@ -64,6 +65,8 @@ classdef WFASetUpParam
             obj.nDataRowRequired = nRowRequired;
 
             obj.nVars = size(obj.lbubConst,1);
+
+            obj.optimLookbackStep = obj.nstepTrain;
 
         end
     end

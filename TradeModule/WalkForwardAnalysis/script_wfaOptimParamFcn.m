@@ -22,25 +22,6 @@ lookbackUB = wfaSetUpParam.lookbackUB; % lookback upper bound
 nstepTrain = wfaSetUpParam.nstepTrain; % Number of step for training datastasket
 nstepTest = wfaSetUpParam.nstepTest; % Number of step for testing dataset
 
-% btEngineSetUp
-tradingCost = wfaSetUpParam.tradingCost;
-maxCapAllocation = wfaSetUpParam.maxCapAllocation;
-backShiftNDay = wfaSetUpParam.backShiftNDay;
-
-% optimization set up
-optimLookbackStep = wfaSetUpParam.nstepTrain;
-maxFcnEval = wfaSetUpParam.maxFcnEval;
-lbubConst = wfaSetUpParam.lbubConst;
-nVars = wfaSetUpParam.nVars;
-
-nlConstParam.maxDDThreshold  = wfaSetUpParam.maxDDThreshold;
-nlConstParam.minPortRet = wfaSetUpParam.minPortRet;
-nlConstParam.minDailyRetThreshold = wfaSetUpParam.minDailyRetThreshold;
-nlConstParam.Last20DRetThreshold = wfaSetUpParam.minLast20DRetThreshold;
-nlConstParam.Last60DRetThreshold = wfaSetUpParam.minLast60DRetThreshold;
-nlConstParam.Last200DRetThreshold = wfaSetUpParam.minLast200DRetThreshold;
-
-
 % number of required nDataRowRequired
 nstepWalk = nWalk*nstepTest + lookbackUB + nstepTrain;
 additionalData = nstepTest; % additional data for safety required data
@@ -228,10 +209,10 @@ for walkIdx = 1:nWalk
         progressCounter = (mCapIdx + nMktCap*(walkIdx-1))/nIteration;
         waitbar(progressCounter, waitbarFig, msg);
 
-        textToDisplay = strcat("walkIdx ",string(walkIdx)," | mCapIdx ",...
+        textToDisp = strcat("walkIdx ",string(walkIdx)," | mCapIdx ",...
             string(mCapIdx)," ",uniqueMktCap(mCapIdx),...
             " -- start=",string(timeColTrainWalkIdx(1)), " end=",string(timeColTrainWalkIdx(end)));
-        disp(textToDisplay)
+        disp(textToDisp)
 
         %setUp list of symbols for each mktCap category in each walkIdx
         mCapIdxAtWalkIdx = mCapEndStepTrainIdxVar(walkIdx, :) == uniqueMktCap(mCapIdx);
@@ -252,9 +233,7 @@ for walkIdx = 1:nWalk
         clearvars priceVolumeRaw dataInputTrain
         %--------------------------------------------------------------------
 
-        optimStructOut = optimParamsFcn(priceVolumeClean, backShiftNDay,...
-            optimLookbackStep, tradingCost, maxCapAllocation,...
-            nlConstParam, lbubConst, maxFcnEval, nVars);
+        optimStructOut = optimParamsFcn(priceVolumeClean, wfaSetUpParam);
 
         %--------------------------------------------------------------------
 
@@ -277,6 +256,9 @@ for walkIdx = 1:nWalk
         % generate tradingSignal in training dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
         tradingSignalTrainOut = tradeSignalShortMomFcn(tradingSignalParameter, priceVolumeClean);
+
+        trainSetResults = btEngineVectFcn (priceVolumeClean,...
+            tradingSignalTrainOut, wfaSetUpParam);
 
         % assign signal to tradingSignalTestSet
         timeColSignalTrain = timeColTrainWalkIdx(end-nstepTrain+1:end,:);
@@ -302,14 +284,26 @@ for walkIdx = 1:nWalk
 
         % generate tradingSignal in test dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
-        tradingSignalTTOut = tradeSignalShortMomFcn (tradingSignalParameter, dataInputTest);
+        tradingSignalTTOut = tradeSignalShortMomFcn (tradingSignalParameter,...
+            dataInputTest);
+
+        testSetResults = btEngineVectFcn (dataInputTest,...
+            tradingSignalTTOut, wfaSetUpParam);
 
         % assign signal to tradingSignalTestSet
         timeColSignalTest = timeColTestWalkIdx(end-nstepTest+1:end,:);
-        tradingSignalTestSet(timeColSignalTest,SymInMCapIdxWalkIdx) = tradingSignalTTOut(timeColSignalTest,:);
+        tradingSignalTestSet(timeColSignalTest,SymInMCapIdxWalkIdx) =...
+            tradingSignalTTOut(timeColSignalTest,:);
 
         clearvars dataInputTest
         %------------------------------------------------------------------
+        CumRetTrainSet  = trainSetResults.equityCurvePortfolioTT.Variables;
+        textToDisp = strcat("CumRetTrainSet : ", string(CumRetTrainSet(end)) );
+        disp(textToDisp)
+
+        CumRetTestSet  = testSetResults.equityCurvePortfolioTT.Variables;
+        textToDisp = strcat("CumRetTestSet : ", string(CumRetTestSet(end)));
+        disp(textToDisp)
 
     end
 
@@ -329,8 +323,8 @@ end
 dataInputTrainSetClean = cleanDataFcn (dataInputTrainSet);
 
 % generate backtest output
-btResultTrainSet = btEngineVectFcn (dataInputTrainSetClean, tradingSignalTrainSet,...
-    backShiftNDay, tradingCost, maxCapAllocation);
+btResultTrainSet = btEngineVectFcn (dataInputTrainSetClean,...
+    tradingSignalTrainSet, wfaSetUpParam);
 
 clearvars dataInputTrainSet dataInputTrainSetClean
 
@@ -349,8 +343,8 @@ end
 dataInputTestSetClean = cleanDataFcn (dataInputTestSet);
 
 % generate backtest output
-btResultTestSet = btEngineVectFcn (dataInputTestSetClean, tradingSignalTestSet,...
-    backShiftNDay, tradingCost, maxCapAllocation);
+btResultTestSet = btEngineVectFcn (dataInputTestSetClean,...
+    tradingSignalTestSet, wfaSetUpParam);
 
 clearvars dataInputTestSet dataInputTestSetClean
 

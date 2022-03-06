@@ -1,5 +1,4 @@
-function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput,...
-    backShiftNDay, tradingCost, maxCapAllocation)
+function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput, wfaSetUpParam)
 
 % backtesterEngineFcn generate output backtesting signal against price
 %
@@ -47,9 +46,7 @@ function resultStruct = btEngineVectFcn (dataInputBT, tradeSignalInput,...
 arguments
     dataInputBT cell
     tradeSignalInput timetable
-    backShiftNDay {mustBeNumeric, mustBePositive, mustBeInteger}
-    tradingCost {mustBeNumeric, mustBePositive}
-    maxCapAllocation {mustBeNumeric, mustBePositive}
+    wfaSetUpParam WFASetUpParam
 
 end
 
@@ -57,6 +54,10 @@ end
 %TODO finalize the data transfer
 openPrice = dataInputBT{1};
 closePrice = dataInputBT{4};
+
+backShiftNDay = wfaSetUpParam.backShiftNDay;
+tradingCost = wfaSetUpParam.tradingCost;
+maxCapAllocation = wfaSetUpParam.maxCapAllocation;
 
 symbols = string(closePrice.Properties.VariableNames);
 symbols = strrep(symbols,"_close","");
@@ -69,7 +70,7 @@ sellCost = tradingCost(2);
 tradingSignal = tradeSignalInput;
 tradingSignal.Variables = backShiftFcn (tradeSignalInput.Variables , backShiftNDay);
 
-clearvars dataStructInput tradeSignalInput
+clearvars dataStructInput tradeSignalInput wfaSetUpParam
 %------------------------------------------------------------------------
 
 % data preparation
