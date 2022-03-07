@@ -255,7 +255,7 @@ for walkIdx = 1:nWalk
         % apply the optimizedTradingParam to generateSignal on training dataset
         % generate tradingSignal in training dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
-        tradingSignalTrainOut = tradeSignalShortMomFcn(tradingSignalParameter, priceVolumeClean);
+        tradingSignalTrainOut = tradeSignalShortMomClosetoCloseFcn(tradingSignalParameter, priceVolumeClean);
 
         trainSetResults = btEngineVectFcn (priceVolumeClean,...
             tradingSignalTrainOut, wfaSetUpParam);
@@ -284,7 +284,7 @@ for walkIdx = 1:nWalk
 
         % generate tradingSignal in test dataset
         tradingSignalParameter = optimStructOut.optimizedTradingSignalParam;
-        tradingSignalTTOut = tradeSignalShortMomFcn (tradingSignalParameter,...
+        tradingSignalTTOut = tradeSignalShortMomClosetoCloseFcn (tradingSignalParameter,...
             dataInputTest);
 
         testSetResults = btEngineVectFcn (dataInputTest,...

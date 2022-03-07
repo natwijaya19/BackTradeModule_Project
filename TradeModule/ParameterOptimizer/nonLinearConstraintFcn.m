@@ -35,7 +35,7 @@ minLast60DRetThreshold = wfaSetUpParam.minLast60DRetThreshold ;
 minLast200DRetThreshold = wfaSetUpParam.minLast200DRetThreshold ;
 
 % generate signal
-tradingSignalOut = tradeSignalShortMomFcn (tradingSignalParam, dataInput);
+tradingSignalOut = tradeSignalShortMomClosetoCloseFcn (tradingSignalParam, dataInput);
 
 % backtest the signal against the price
 tradingSignalIn = tradingSignalOut;

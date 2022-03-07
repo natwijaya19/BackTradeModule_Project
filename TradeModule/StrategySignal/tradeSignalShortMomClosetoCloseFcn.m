@@ -1,35 +1,40 @@
-% function tradeSignalOut = tradeSignalShortMomFcn(paramInput, dataInput) 
+function tradeSignal = tradeSignalShortMomClosetoCloseFcn(paramInput, dataInput)
 
 % tradeSignalShortMomFcn generate trading signal and is core of the
 % strategy
 
+%% argument validation
+arguments
+    paramInput {mustBeNumeric}
+    dataInput cell
+
+end
 %% setUp dataInput
-dataInput = dataClean;
+% dataInput = dataClean;
 
 %=======================================================================
 
 %% setup the params
 
-% dummy paramInput
-x = [
-    40  %1
-    200 %2
-    5   %3
-    5   %4
-    10  %5
-    8   %6
-    120 %7
-    20  %8
-    5   %9
-    8   %10
-    5   %11
-    1   %12
-    ];
+% % dummy paramInput
+% x = [
+%     40  %1
+%     200 %2
+%     5   %3
+%     5   %4
+%     10  %5
+%     8   %6
+%     120 %7
+%     20  %8
+%     5   %9
+%     8   %10
+%     5   %11
+%     ];
 
-% Transfer input values to each variables. All variables are converted from
+%% Transfer input values to each variables. All variables are converted from
 % integer value in optimization adjusted to the suitable unit
 
-% x = paramInput ; % TODO remove comment when final
+x = paramInput ; % TODO remove comment when final
 
 volumeMATreshold = x(1)/100 ; % input #1
 volumeMALookback = x(2) ; % input #2
@@ -42,7 +47,6 @@ priceMALookback = x(8) ; % input #8
 priceVolumeValueBufferDays = x(9) ; % input #9
 cutLossLookback = x(10) ; % input #10
 cutLossPct = x(11)/100 ; % input #11
-backShiftNDay = x(12) ; % input #12
 
 %=======================================================================
 
@@ -64,7 +68,7 @@ volumeSignal(isinf(volumeSignal)) = 0;
 % barFig = bar(signal);
 % title("volumeSignal")
 
-clear volumeMA volumeTT 
+clear volumeMA volumeTT
 %=======================================================================
 
 %% Signal value threshold
@@ -100,17 +104,19 @@ volumeValueBufferSignal = movmax(volumeValueSignal,[volumeValueBufferDays, 0], 1
 % barFig = bar(signal);
 % title("volumeValueBufferSignal")
 
-clear volumeValueSignal valueSignal  
+clear volumeValueSignal valueSignal
 
 %=======================================================================
 
 %% Signal price return from low to close
 priceRetLowCloseThresh;
-
-lowPriceTT = dataInput{3};
 closePriceTT = dataInput{4};
 
-priceRetLowClose = (closePriceTT.Variables ./ lowPriceTT.Variables) -1 ;
+closePrice = closePriceTT.Variables;
+nDayShift = 1;
+closePriceShifted = backShiftFcn (closePrice, nDayShift);
+
+priceRetLowClose = (closePriceTT.Variables ./ closePriceShifted) -1 ;
 priceRetLowClose(isnan(priceRetLowClose)) = 0;
 priceRetLowClose(isinf(priceRetLowClose)) = 0;
 
@@ -127,7 +133,7 @@ clear lowPriceTT closePriceTT priceRetLowClose
 
 %% price MA signal
 priceMALookback;
-priceMAThreshold; 
+priceMAThreshold;
 closePriceTT = dataInput{4};
 
 priceMA = movmean (closePriceTT.Variables, [priceMALookback, 0], 1, 'omitnan');
@@ -146,7 +152,7 @@ clear closePriceTT volumeTT priceMA
 %=======================================================================
 
 %% price volume value buffer days
-priceVolumeValueBufferDays; 
+priceVolumeValueBufferDays;
 
 priceVolumeValueBuffer =  volumeValueBufferSignal .* priceRetLowCloseSignal .* priceMASignal;
 
@@ -216,6 +222,6 @@ tradeSignal.Properties.VariableNames  = symbols ;
 
 %% end of function, remove intermediary variables
 
-% clearvars -except tradingSignalTT
+clearvars -except tradeSignal
 
-% end
+end

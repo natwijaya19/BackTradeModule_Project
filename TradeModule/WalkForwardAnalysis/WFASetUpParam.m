@@ -4,10 +4,10 @@ classdef WFASetUpParam
 
     properties
         % WFA specific set up
-        nWalk = 36 ; % Number of walk for the whole walk forwad
+        nWalk = 80 ; % Number of walk for the whole walk forwad
         lookbackUB = 300; % lookback upper bound
-        nstepTrain = 100; % Number of step for training datastasket
-        nstepTest = 20; % Number of step for testing dataset
+        nstepTrain = 200; % Number of step for training datastasket
+        nstepTest = 10; % Number of step for testing dataset
 
         % btEngineSetUp
         tradingCost = [0.15/100, 0.25/100];
@@ -48,7 +48,7 @@ classdef WFASetUpParam
                 1,  60          % valueThreshold = x(3)*10^7 ; % input #3 in Rp hundreds million
                 1,  10          % valueLookback = x(4) ; % input #4 nDays
                 1,  10          % volumeValueBufferDays = x(5) ; % input #5
-                1,  15          % priceRetLowCloseThresh = x(6)/100 ; % input #6
+                1,  20          % priceRetLowCloseThresh = x(6)/100 ; % input #6
                 40, 300          % priceMAThreshold = x(7)/100 ; % input #7
                 1,  30          % priceMALookback = x(8) ; % input #8
                 1,  20          % priceVolumeValueBufferDays = x(9) ; % input #9
